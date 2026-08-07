@@ -589,10 +589,12 @@ async def main():
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, lambda: asyncio.create_task(shutdown()))
 
+    # Принудительно удаляем вебхук и сбрасываем ожидающие обновления
+    await bot.delete_webhook(drop_pending_updates=True)
+    logger.info("Webhook удалён, ожидающие обновления сброшены")
+
     logger.info("Запуск поллинга бота...")
     try:
-        # polling_timeout = 10 – быстрее реагирует на новые обновления
-        # allowed_updates – ограничиваем типы обновлений, чтобы не тратить ресурсы
         await dp.start_polling(
             bot,
             skip_updates=True,
