@@ -108,10 +108,19 @@ async def student_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Темный эльф", callback_data="race_dark_elf")],
-        [InlineKeyboardButton(text="Эльф", callback_data="race_elf")],
-        [InlineKeyboardButton(text="Человек", callback_data="race_human")],
-        [InlineKeyboardButton(text="Гном", callback_data="race_dwarf")],
-        [InlineKeyboardButton(text="Орк", callback_data="race_orc")]
+        [InlineKeyboardButton(text="Маг", callback_data="race_mage")],
+        [InlineKeyboardButton(text="Демон", callback_data="race_demon")],
+        [InlineKeyboardButton(text="Мутант", callback_data="race_mutant")],
+        [InlineKeyboardButton(text="Шифтер", callback_data="race_shifter")],
+        [InlineKeyboardButton(text="Лис", callback_data="race_lis")],
+        [InlineKeyboardButton(text="Волки", callback_data="race_wolfes")],
+        [InlineKeyboardButton(text="Коты", callback_data="race_cats")],
+        [InlineKeyboardButton(text="Журавли", callback_data="race_juravli")],
+        [InlineKeyboardButton(text="Змеи", callback_data="race_snakes")],
+        [InlineKeyboardButton(text="Светлые эльфы", callback_data="race_sun_elf")],
+        [InlineKeyboardButton(text="Дух", callback_data="race_soul")],
+        [InlineKeyboardButton(text="Серафим", callback_data="race_seraphim")]
+        
     ])
     await message.answer(
         "**Раса**\nИ кто ты у нас по природе? Человек, эльф, недодемон? Пока ты будешь перечислять, я, пожалуй, пересчитаю свои рога. "
@@ -125,10 +134,19 @@ async def student_name(message: types.Message, state: FSMContext):
 async def student_race(callback: types.CallbackQuery, state: FSMContext):
     race_map = {
         "race_dark_elf": "Темный эльф",
-        "race_elf": "Эльф",
-        "race_human": "Человек",
-        "race_dwarf": "Гном",
-        "race_orc": "Орк"
+        "race_mage": "Маг",
+        "race_demon": "Демон",
+        "race_mutant": "Мутант",
+        "race_shifter": "Шифтер",
+        "race_lis": "Лис",
+        "race_wolfes": "Волки",
+        "race_cats": "Коты",
+        "race_juravli": "Журавли",
+        "race_snakes": "Змеи",
+        "race_sun_elf": "Светлые эльфы",
+        "race_soul": "Дух",
+        "race_seraphim": "Серафим"
+}
     }
     race = race_map.get(callback.data)
     if race:
