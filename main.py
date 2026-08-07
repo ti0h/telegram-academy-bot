@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+import signal
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command, StateFilter
@@ -12,12 +13,16 @@ from aiogram.fsm.storage.memory import MemoryStorage
 # ---------- Загружаем секреты из .env ----------
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GROUP_CHAT_ID = int(os.getenv("GROUP_CHAT_ID"))
+GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")
 
 if not BOT_TOKEN or not GROUP_CHAT_ID:
-    raise ValueError("BOT_TOKEN и GROUP_CHAT_ID должны быть заданы в .env")
+    raise ValueError("BOT_TOKEN и GROUP_CHAT_ID должны быть заданы в .env или в переменных окружения")
+
+GROUP_CHAT_ID = int(GROUP_CHAT_ID)  # приводим к int
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 storage = MemoryStorage()
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=storage)
@@ -146,7 +151,6 @@ async def student_name(message: types.Message, state: FSMContext):
 
 @dp.callback_query(StateFilter(StudentForm.race))
 async def student_race(callback: types.CallbackQuery, state: FSMContext):
-    # callback_data имеет вид "race_<ключ>"
     key = callback.data.split("_", 1)[1]
     if key in RACE_MAP:
         race_name = RACE_MAP[key]
@@ -564,9 +568,30 @@ async def process_reject_reason(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("✅ Причина принята, анкета отклонена.", parse_mode="Markdown")
 
-# ---------- ЗАПУСК ----------
+# ---------- ЗАПУСК (с корректной обработкой сигналов) ----------
+async def shutdown():
+    """Корректно завершает поллинг и закрывает сессию бота."""
+    logger.info("Получен сигнал завершения, останавливаем поллинг...")
+    await dp.stop_polling()
+    await bot.session.close()
+    logger.info("Бот остановлен.")
+
 async def main():
-    await dp.start_polling(bot)
+    # Настраиваем обработку сигналов для плавного завершения
+    loop = asyncio.get_event_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, lambda: asyncio.create_task(shutdown()))
+
+    logger.info("Запуск поллинга бота...")
+    try:
+        # skip_updates=True игнорирует старые обновления, предотвращая конфликты
+        await dp.start_polling(bot, skip_updates=True)
+    except Exception as e:
+        logger.error(f"Ошибка во время поллинга: {e}")
+    finally:
+        # Гарантированно закрываем сессию при любом завершении
+        await bot.session.close()
+        logger.info("Бот завершил работу.")
 
 if __name__ == "__main__":
     asyncio.run(main())
