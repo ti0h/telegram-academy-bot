@@ -316,7 +316,7 @@ async def staff_age(message: types.Message, state: FSMContext):
         return
     await state.update_data(age=age)
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🧝 Темный эльф", callback_data="race_dark_elf")],
+        [InlineKeyboardButton(text="🧝 Темный эльфs", callback_data="race_dark_elf")],
         [InlineKeyboardButton(text="🧝 Эльф", callback_data="race_elf")],
         [InlineKeyboardButton(text="🧑 Человек", callback_data="race_human")],
         [InlineKeyboardButton(text="⛏ Гном", callback_data="race_dwarf")],
