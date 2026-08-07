@@ -320,7 +320,7 @@ async def staff_age(message: types.Message, state: FSMContext):
         [InlineKeyboardButton(text="🧝 Эльф", callback_data="race_elf")],
         [InlineKeyboardButton(text="🧑 Человек", callback_data="race_human")],
         [InlineKeyboardButton(text="⛏ Гном", callback_data="race_dwarf")],
-        [InlineKeyboardButton(text="👹 Орк", callback_data="race_orc")]
+        [InlineKeyboardButton(text="👹 Орк", callback_data="race_orc")],
         [InlineKeyboardButton(text="👹 Огр", callback_data="race_ogr")]
     ])
     await message.answer(
