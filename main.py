@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 import signal
+import time
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command, StateFilter
@@ -10,7 +11,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
 
-# ---------- Загружаем секреты из .env ----------
+# ---------- Загружаем секреты ----------
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")
@@ -18,7 +19,7 @@ GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")
 if not BOT_TOKEN or not GROUP_CHAT_ID:
     raise ValueError("BOT_TOKEN и GROUP_CHAT_ID должны быть заданы в .env или в переменных окружения")
 
-GROUP_CHAT_ID = int(GROUP_CHAT_ID)  # приводим к int
+GROUP_CHAT_ID = int(GROUP_CHAT_ID)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ storage = MemoryStorage()
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=storage)
 
-# ---------- НОВАЯ RACE_MAP (все 13 рас) ----------
+# ---------- RACE_MAP (13 рас) ----------
 RACE_MAP = {
     "dark_elf": "Тёмный эльф",
     "mage": "Маг",
@@ -44,9 +45,7 @@ RACE_MAP = {
     "seraphim": "Серафим"
 }
 
-# ---------- ФУНКЦИЯ ДЛЯ КЛАВИАТУРЫ РАС ----------
 def get_race_keyboard():
-    """Генерирует инлайн-клавиатуру с расами (по 3 в ряд) из RACE_MAP"""
     buttons = []
     row = []
     for i, (key, name) in enumerate(RACE_MAP.items(), 1):
@@ -275,6 +274,7 @@ async def student_biography(message: types.Message, state: FSMContext):
 
 @dp.message(StateFilter(StudentForm.course))
 async def student_course(message: types.Message, state: FSMContext):
+    start_time = time.time()
     await state.update_data(course=message.text)
     data = await state.get_data()
     await state.clear()
@@ -299,12 +299,17 @@ async def student_course(message: types.Message, state: FSMContext):
          InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{message.from_user.id}")]
     ])
 
-    await bot.send_message(GROUP_CHAT_ID, text, parse_mode="Markdown", reply_markup=keyboard)
+    # Асинхронно отправляем в группу, не дожидаясь ответа
+    asyncio.create_task(bot.send_message(GROUP_CHAT_ID, text, parse_mode="Markdown", reply_markup=keyboard))
+
+    # Сразу отвечаем пользователю
     await message.answer(
         "✅ Анкета отправлена на проверку.\n\n"
         "**На правки - три дня.** Не успеешь - твои проблемы. Мне не к спеху. Я могу ждать вечность. Но тебе-то, смертный, вечность не светит.",
         parse_mode="Markdown"
     )
+
+    logger.info(f"student_course обработано за {time.time() - start_time:.3f} сек")
 
 # ---------- АНКЕТА ПЕРСОНАЛА ----------
 @dp.message(StateFilter(StaffForm.position))
@@ -438,6 +443,7 @@ async def staff_appearance(message: types.Message, state: FSMContext):
 
 @dp.message(StateFilter(StaffForm.biography))
 async def staff_biography(message: types.Message, state: FSMContext):
+    start_time = time.time()
     lines = message.text.splitlines()
     if len(lines) < 8:
         await message.answer(
@@ -469,12 +475,15 @@ async def staff_biography(message: types.Message, state: FSMContext):
          InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{message.from_user.id}")]
     ])
 
-    await bot.send_message(GROUP_CHAT_ID, text, parse_mode="Markdown", reply_markup=keyboard)
+    asyncio.create_task(bot.send_message(GROUP_CHAT_ID, text, parse_mode="Markdown", reply_markup=keyboard))
+
     await message.answer(
         "✅ Анкета отправлена на проверку.\n\n"
         "**Бронь - неделя. Анкету править - три дня.** Если не успеешь… да плевать, если честно. Найдёшь другую работу. Или не найдёшь. Я в любом случае останусь тут - великий, прекрасный и абсолютно довольный собой.",
         parse_mode="Markdown"
     )
+
+    logger.info(f"staff_biography обработано за {time.time() - start_time:.3f} сек")
 
 # ---------- ОБРАБОТЧИК КНОПОК (ОДОБРИТЬ / ОТКЛОНИТЬ) ----------
 @dp.callback_query()
@@ -570,26 +579,29 @@ async def process_reject_reason(message: types.Message, state: FSMContext):
 
 # ---------- ЗАПУСК (с корректной обработкой сигналов) ----------
 async def shutdown():
-    """Корректно завершает поллинг и закрывает сессию бота."""
     logger.info("Получен сигнал завершения, останавливаем поллинг...")
     await dp.stop_polling()
     await bot.session.close()
     logger.info("Бот остановлен.")
 
 async def main():
-    # Настраиваем обработку сигналов для плавного завершения
     loop = asyncio.get_event_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, lambda: asyncio.create_task(shutdown()))
 
     logger.info("Запуск поллинга бота...")
     try:
-        # skip_updates=True игнорирует старые обновления, предотвращая конфликты
-        await dp.start_polling(bot, skip_updates=True)
+        # polling_timeout = 10 – быстрее реагирует на новые обновления
+        # allowed_updates – ограничиваем типы обновлений, чтобы не тратить ресурсы
+        await dp.start_polling(
+            bot,
+            skip_updates=True,
+            polling_timeout=10,
+            allowed_updates=["message", "callback_query"]
+        )
     except Exception as e:
         logger.error(f"Ошибка во время поллинга: {e}")
     finally:
-        # Гарантированно закрываем сессию при любом завершении
         await bot.session.close()
         logger.info("Бот завершил работу.")
 
