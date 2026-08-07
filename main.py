@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -8,23 +9,54 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
 
-# ------------------ КОНФИГ ------------------
+# ---------- Загружаем секреты из .env ----------
+load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GROUP_CHAT_ID = int(os.getenv("GROUP_CHAT_ID", 0))
+GROUP_CHAT_ID = int(os.getenv("GROUP_CHAT_ID"))
+
 if not BOT_TOKEN or not GROUP_CHAT_ID:
-    raise ValueError("Переменные окружения BOT_TOKEN и GROUP_CHAT_ID обязательны")
-# -------------------------------------------
+    raise ValueError("BOT_TOKEN и GROUP_CHAT_ID должны быть заданы в .env")
 
 logging.basicConfig(level=logging.INFO)
 storage = MemoryStorage()
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=storage)
 
-# ---------- СОСТОЯНИЕ ДЛЯ ВЫБОРА ТИПА ----------
+# ---------- НОВАЯ RACE_MAP (все 13 рас) ----------
+RACE_MAP = {
+    "dark_elf": "Тёмный эльф",
+    "mage": "Маг",
+    "demon": "Демон",
+    "mutant": "Мутант",
+    "shifter": "Шифтер",
+    "lis": "Лис",
+    "wolfes": "Волки",
+    "cats": "Коты",
+    "juravli": "Журавли",
+    "snakes": "Змеи",
+    "sun_elf": "Светлые эльфы",
+    "soul": "Дух",
+    "seraphim": "Серафим"
+}
+
+# ---------- ФУНКЦИЯ ДЛЯ КЛАВИАТУРЫ РАС ----------
+def get_race_keyboard():
+    """Генерирует инлайн-клавиатуру с расами (по 3 в ряд) из RACE_MAP"""
+    buttons = []
+    row = []
+    for i, (key, name) in enumerate(RACE_MAP.items(), 1):
+        row.append(InlineKeyboardButton(text=name, callback_data=f"race_{key}"))
+        if i % 3 == 0:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+# ---------- СОСТОЯНИЯ ----------
 class Choice(StatesGroup):
     waiting = State()
 
-# ---------- СОСТОЯНИЯ ДЛЯ АНКЕТЫ УЧЕНИКА ----------
 class StudentForm(StatesGroup):
     name = State()
     race = State()
@@ -38,7 +70,6 @@ class StudentForm(StatesGroup):
     biography = State()
     course = State()
 
-# ---------- СОСТОЯНИЯ ДЛЯ АНКЕТЫ ПЕРСОНАЛА ----------
 class StaffForm(StatesGroup):
     position = State()
     name = State()
@@ -52,7 +83,6 @@ class StaffForm(StatesGroup):
     appearance = State()
     biography = State()
 
-# ---------- СОСТОЯНИЕ ДЛЯ ПРИЧИНЫ ОТКЛОНЕНИЯ ----------
 class RejectReason(StatesGroup):
     waiting_for_reason = State()
 
@@ -106,53 +136,23 @@ async def process_choice(callback: types.CallbackQuery, state: FSMContext):
 @dp.message(StateFilter(StudentForm.name))
 async def student_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Темный эльф", callback_data="race_dark_elf")],
-        [InlineKeyboardButton(text="Маг", callback_data="race_mage")],
-        [InlineKeyboardButton(text="Демон", callback_data="race_demon")],
-        [InlineKeyboardButton(text="Мутант", callback_data="race_mutant")],
-        [InlineKeyboardButton(text="Шифтер", callback_data="race_shifter")],
-        [InlineKeyboardButton(text="Лис", callback_data="race_lis")],
-        [InlineKeyboardButton(text="Волки", callback_data="race_wolfes")],
-        [InlineKeyboardButton(text="Коты", callback_data="race_cats")],
-        [InlineKeyboardButton(text="Журавли", callback_data="race_juravli")],
-        [InlineKeyboardButton(text="Змеи", callback_data="race_snakes")],
-        [InlineKeyboardButton(text="Светлые эльфы", callback_data="race_sun_elf")],
-        [InlineKeyboardButton(text="Дух", callback_data="race_soul")],
-        [InlineKeyboardButton(text="Серафим", callback_data="race_seraphim")]
-        
-    ])
     await message.answer(
         "**Раса**\nИ кто ты у нас по природе? Человек, эльф, недодемон? Пока ты будешь перечислять, я, пожалуй, пересчитаю свои рога. "
         "О, у меня их два. Прекрасных. Тёмно-синих. А у тебя? Ну давай, не томи, кто ты там по расовой принадлежности.",
-        reply_markup=keyboard,
+        reply_markup=get_race_keyboard(),
         parse_mode="Markdown"
     )
     await state.set_state(StudentForm.race)
 
 @dp.callback_query(StateFilter(StudentForm.race))
 async def student_race(callback: types.CallbackQuery, state: FSMContext):
-    race_map = {
-        "race_dark_elf": "Темный эльф",
-        "race_mage": "Маг",
-        "race_demon": "Демон",
-        "race_mutant": "Мутант",
-        "race_shifter": "Шифтер",
-        "race_lis": "Лис",
-        "race_wolfes": "Волки",
-        "race_cats": "Коты",
-        "race_juravli": "Журавли",
-        "race_snakes": "Змеи",
-        "race_sun_elf": "Светлые эльфы",
-        "race_soul": "Дух",
-        "race_seraphim": "Серафим"
-}
-    }
-    race = race_map.get(callback.data)
-    if race:
-        await state.update_data(race=race)
+    # callback_data имеет вид "race_<ключ>"
+    key = callback.data.split("_", 1)[1]
+    if key in RACE_MAP:
+        race_name = RACE_MAP[key]
+        await state.update_data(race=race_name)
         await callback.message.delete()
-        await bot.send_message(callback.message.chat.id, f"Выбрана раса: {race}", parse_mode="Markdown")
+        await bot.send_message(callback.message.chat.id, f"Выбрана раса: {race_name}", parse_mode="Markdown")
         await bot.send_message(
             callback.message.chat.id,
             "**Возраст**\nНе подскажешь возраст? Мой я давно не считаю, потому что цифры не способны вместить моё величие. "
@@ -333,36 +333,22 @@ async def staff_age(message: types.Message, state: FSMContext):
         await message.answer("⚠️ Возраст от 1 до 120. Введите корректно.", parse_mode="Markdown")
         return
     await state.update_data(age=age)
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🧝 Темный эльфsfdsfdsfdsf", callback_data="race_dark_elf")],
-        [InlineKeyboardButton(text="🧝 Эльф", callback_data="race_elf")],
-        [InlineKeyboardButton(text="🧑 Человек", callback_data="race_human")],
-        [InlineKeyboardButton(text="⛏ Гном", callback_data="race_dwarf")],
-        [InlineKeyboardButton(text="👹 Орк", callback_data="race_orc")],
-        [InlineKeyboardButton(text="👹 Огр", callback_data="race_ogr")]
-    ])
     await message.answer(
         "**Раса**\nИ кто ты у нас по природе? Человек, эльф, недодемон? Пока ты будешь перечислять, я, пожалуй, пересчитаю свои рога. "
         "О, у меня их два. Прекрасных. Тёмно-синих. А у тебя? Ну давай, не томи, кто ты там по расовой принадлежности.",
-        reply_markup=keyboard,
+        reply_markup=get_race_keyboard(),
         parse_mode="Markdown"
     )
     await state.set_state(StaffForm.race)
 
 @dp.callback_query(StateFilter(StaffForm.race))
 async def staff_race(callback: types.CallbackQuery, state: FSMContext):
-    race_map = {
-        "race_dark_elf": "Темный эльф",
-        "race_elf": "Эльф",
-        "race_human": "Человек",
-        "race_dwarf": "Гном",
-        "race_orc": "Орк"
-    }
-    race = race_map.get(callback.data)
-    if race:
-        await state.update_data(race=race)
+    key = callback.data.split("_", 1)[1]
+    if key in RACE_MAP:
+        race_name = RACE_MAP[key]
+        await state.update_data(race=race_name)
         await callback.message.delete()
-        await bot.send_message(callback.message.chat.id, f"Выбрана раса: {race}", parse_mode="Markdown")
+        await bot.send_message(callback.message.chat.id, f"Выбрана раса: {race_name}", parse_mode="Markdown")
         await bot.send_message(
             callback.message.chat.id,
             "**Пол / Рост / Вес**\nКто ты? пол, рост, вес. Кратко. Пока ты пишешь, я прикидываю, достаточно ли хорош сегодня мой профиль. "
@@ -441,7 +427,7 @@ async def staff_appearance(message: types.Message, state: FSMContext):
     await state.update_data(appearance=message.text)
     await message.answer(
         "**Биография**\nГде учился, кого предавал, почему решил, что достоин служить мне. Чтобы стать преподавателем, сдавал экзамен. "
-        "Я не принимаю экзамены, я выше этого. Но биографию прочту. Если она скучная - я добавить в неё красок. В основном красных. Люблю красный.",
+        "Я не принимаю экзамены, я выше этого. Но биографию прочту. Если она скучная - я добавлю в неё красок. В основном красных. Люблю красный.",
         parse_mode="Markdown"
     )
     await state.set_state(StaffForm.biography)
@@ -489,7 +475,6 @@ async def staff_biography(message: types.Message, state: FSMContext):
 # ---------- ОБРАБОТЧИК КНОПОК (ОДОБРИТЬ / ОТКЛОНИТЬ) ----------
 @dp.callback_query()
 async def handle_group_action(callback: types.CallbackQuery, state: FSMContext):
-    # Проверка прав администратора
     try:
         member = await bot.get_chat_member(GROUP_CHAT_ID, callback.from_user.id)
     except:
@@ -503,7 +488,6 @@ async def handle_group_action(callback: types.CallbackQuery, state: FSMContext):
     action, user_id_str = callback.data.split("_")
     user_id = int(user_id_str)
 
-    # Убираем кнопки
     await callback.message.edit_reply_markup(reply_markup=None)
 
     admin = callback.from_user
@@ -512,7 +496,7 @@ async def handle_group_action(callback: types.CallbackQuery, state: FSMContext):
     if action == "approve":
         new_text = callback.message.text + f"\n\n✅ **Одобрено** администратором {admin_mention}"
         await bot.edit_message_text(new_text, chat_id=GROUP_CHAT_ID, message_id=callback.message.message_id, parse_mode="Markdown")
-        await bot.send_message(user_id, "Анкета принята.\n\nНадо же, принята. Не скажу, что я в восторге - я вообще редко бываю в восторге от кого-то, кроме себя, - но твоя писанина меня хотя бы не усыпила. Это уже достижение. Так что заходи, располагайся и постарайся не умереть в первую же неделю. Мне будет… ну, не то чтобы жаль, скорее неловко перед статистикой. И да, не думай, что мы теперь друзья. Ты здесь гость, я здесь - вечность. Разницу улавливаешь? Вот и славно.\n\nhttps://t.me/+Iji2mDCmE24yMTNi", parse_mode="Markdown")
+        await bot.send_message(user_id, "🎉 Ваша анкета **одобрена**! Добро пожаловать.", parse_mode="Markdown")
         await callback.answer("Анкета принята", show_alert=False)
 
     elif action == "reject":
@@ -570,7 +554,7 @@ async def process_reject_reason(message: types.Message, state: FSMContext):
         await message.answer(f"⚠️ Ошибка редактирования: {e}", parse_mode="Markdown")
         return
 
-    await bot.send_message(user_id, f"❌ Ваша анкета **отклонена**.\nПричина: {reason}\nНу надо же. Я почти впечатлён. Почти. Знаешь, получить отказ по такой причине - это надо было постараться. В плохом смысле. Мне за тебя даже чуть-чуть стыдно, а я, поверь, существо практически бесстыдное. Ступай, подумай над собой. Если одумаешься и переделаешь - так уж и быть, посмотрю ещё раз. Но учти: второго такого позора я не прощу. Не позорься.", parse_mode="Markdown")
+    await bot.send_message(user_id, f"❌ Ваша анкета **отклонена**.\nПричина: {reason}", parse_mode="Markdown")
 
     try:
         await bot.delete_message(GROUP_CHAT_ID, request_msg_id)
