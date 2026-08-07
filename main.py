@@ -107,11 +107,11 @@ async def process_choice(callback: types.CallbackQuery, state: FSMContext):
 async def student_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🧝 Темный эльф", callback_data="race_dark_elf")],
-        [InlineKeyboardButton(text="🧝 Эльф", callback_data="race_elf")],
-        [InlineKeyboardButton(text="🧑 Человек", callback_data="race_human")],
-        [InlineKeyboardButton(text="⛏ Гном", callback_data="race_dwarf")],
-        [InlineKeyboardButton(text="👹 Орк", callback_data="race_orc")]
+        [InlineKeyboardButton(text="Темный эльф", callback_data="race_dark_elf")],
+        [InlineKeyboardButton(text="Эльф", callback_data="race_elf")],
+        [InlineKeyboardButton(text="Человек", callback_data="race_human")],
+        [InlineKeyboardButton(text="Гном", callback_data="race_dwarf")],
+        [InlineKeyboardButton(text="Орк", callback_data="race_orc")]
     ])
     await message.answer(
         "**Раса**\nИ кто ты у нас по природе? Человек, эльф, недодемон? Пока ты будешь перечислять, я, пожалуй, пересчитаю свои рога. "
