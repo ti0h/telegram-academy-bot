@@ -195,13 +195,20 @@ async def student_gender_height_weight(message: types.Message, state: FSMContext
 
 @dp.message(StateFilter(StudentForm.character))
 async def student_character(message: types.Message, state: FSMContext):
-    lines = message.text.splitlines()
-    if len(lines) < 4:
+    # Убираем лишние пробелы в начале и конце, чтобы не считать их
+    text = message.text.strip()
+    
+    # Задаём минимальную длину (например, 20 символов)
+    MIN_LENGTH = 500
+    
+    if len(text) < MIN_LENGTH:
         await message.answer(
-            f"⚠️ Характер должен содержать минимум 4 строки. Сейчас {len(lines)}. Напишите подробнее:",
+            f"⚠️ Характер должен содержать минимум {MIN_LENGTH} символов. "
+            f"Сейчас {len(text)}. Напишите подробнее:",
             parse_mode="Markdown"
         )
         return
+    
     await state.update_data(character=message.text)
     await message.answer(
         "**Способности**\nНа что ты способен? Не надейся меня впечатлить - я видел магов, которые создавали миры. Я сам создавал миры. "
