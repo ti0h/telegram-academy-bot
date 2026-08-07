@@ -321,6 +321,7 @@ async def staff_age(message: types.Message, state: FSMContext):
         [InlineKeyboardButton(text="🧑 Человек", callback_data="race_human")],
         [InlineKeyboardButton(text="⛏ Гном", callback_data="race_dwarf")],
         [InlineKeyboardButton(text="👹 Орк", callback_data="race_orc")]
+        [InlineKeyboardButton(text="👹 Огр", callback_data="race_ogr")]
     ])
     await message.answer(
         "**Раса**\nИ кто ты у нас по природе? Человек, эльф, недодемон? Пока ты будешь перечислять, я, пожалуй, пересчитаю свои рога. "
