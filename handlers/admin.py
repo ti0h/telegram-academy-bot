@@ -3,9 +3,9 @@ from aiogram import Router, types, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from ..config import GROUP_CHAT_ID
-from ..states import RejectReason
-from ..utils import esc
+from config import GROUP_CHAT_ID          # абсолютный импорт
+from states import RejectReason           # абсолютный импорт
+from utils import esc                     # абсолютный импорт
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -20,7 +20,6 @@ async def handle_approve_reject(callback: types.CallbackQuery, state: FSMContext
     action, user_id_str = parts
     user_id = int(user_id_str)
 
-    # Проверка прав администратора
     try:
         member = await callback.bot.get_chat_member(GROUP_CHAT_ID, callback.from_user.id)
     except Exception as e:
@@ -32,7 +31,6 @@ async def handle_approve_reject(callback: types.CallbackQuery, state: FSMContext
         await callback.answer("⛔ Только администраторы группы могут принимать решения.", show_alert=True)
         return
 
-    # Убираем кнопки
     await callback.message.edit_reply_markup(reply_markup=None)
 
     admin = callback.from_user
