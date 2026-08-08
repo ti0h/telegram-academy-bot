@@ -26,7 +26,7 @@ GROUP_CHAT_ID = int(GROUP_CHAT_ID_RAW)
 
 logging.basicConfig(level=logging.INFO)
 storage = MemoryStorage()
-bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=storage)
 
 # ---------- RACE_MAP (все 13 рас) ----------
@@ -133,7 +133,7 @@ async def process_choice(callback: types.CallbackQuery, state: FSMContext):
             callback.message.chat.id,
             "<b>Для ученика</b>\n\n"
             "Назовись. Только без титулов, умоляю. «Лорд Тьмы», «Повелительница Звёзд» — я этого не вынесу. "
-            "У меня у самого их десяток, и я не разбрасываюсь. Просто имя. Мне, в общем-то, всё равно, но формальности требуют."
+            "У меня у самого их десяток, и я не разбрасываюсь. Просто имя. Мне, в общем-то, всё равно, но формальности требуют.", parse_mode="html"
         )
         await state.set_state(StudentForm.name)
         await callback.answer()
