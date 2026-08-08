@@ -3,8 +3,8 @@ from aiogram import Router, types, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from config import GROUP_CHAT_ID
-from states import StudentForm
+from config import GROUP_CHAT_ID          # абсолютный
+from states import StudentForm            # абсолютный
 from keyboards import get_race_keyboard_with_back, RACE_MAP, get_approve_reject_keyboard, get_back_keyboard
 from utils import esc
 
