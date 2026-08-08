@@ -1,5 +1,9 @@
+import os
+import sys
+import logging
 import asyncio
 import html
+from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -9,13 +13,9 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiohttp import web
 
 # ---------- Загружаем секреты ----------
-# НЕ используем load_dotenv() на продакшене – переменные берутся из окружения.
-# (Если нужен локальный .env – оставьте, но он не помешает, если файла нет)
-
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GROUP_CHAT_ID_RAW = os.getenv("GROUP_CHAT_ID_RAW")  # Имя должно совпадать с вашим ключом
+GROUP_CHAT_ID_RAW = os.getenv("GROUP_CHAT_ID_RAW")  # Используйте то же имя, что в Environment Variables
 
-# Диагностика – выведем в лог значения (убедитесь, что они не None)
 print(f"BOT_TOKEN = {BOT_TOKEN}", file=sys.stderr)
 print(f"GROUP_CHAT_ID_RAW = {GROUP_CHAT_ID_RAW}", file=sys.stderr)
 
@@ -24,18 +24,15 @@ if not BOT_TOKEN:
 if not GROUP_CHAT_ID_RAW:
     raise ValueError("GROUP_CHAT_ID_RAW не задан в переменных окружения")
 
-try:
-    GROUP_CHAT_ID = int(GROUP_CHAT_ID_RAW)
-except ValueError:
-    raise ValueError(f"GROUP_CHAT_ID_RAW должен быть числом, получено: {GROUP_CHAT_ID_RAW}")
-
+GROUP_CHAT_ID = int(GROUP_CHAT_ID_RAW)
 PORT = int(os.getenv("PORT", 10000))
 
 logging.basicConfig(level=logging.INFO)
 storage = MemoryStorage()
-# Устанавливаем HTML-разметку по умолчанию
 bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher(storage=storage)
+
+# ... остальной код без изменений ...
 
 # ---------- RACE_MAP (все 13 рас) ----------
 RACE_MAP = {
