@@ -3,7 +3,7 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 
 from states import Choice, StudentForm, StaffForm, STUDENT_PREV, STAFF_PREV, STUDENT_QUESTIONS, STAFF_QUESTIONS
-from keyboards import get_main_menu_keyboard, get_race_keyboard_with_back, get_back_keyboard
+from keyboards import get_main_menu_keyboard, get_race_keyboard_with_back, get_back_keyboard, get_positions_keyboard
 
 router = Router()
 
@@ -32,20 +32,18 @@ async def process_choice(callback: types.CallbackQuery, state: FSMContext):
         await state.update_data(last_bot_message_id=sent.message_id)
         await state.set_state(StudentForm.name)
     elif callback.data == "choice_staff":
+        # Отправляем клавиатуру с должностями
         sent = await callback.message.answer(
-            "<b>Для персонала</b>\n\n"
-            "Решил устроиться ко мне на работу? Смело. Или глупо. Я пока не определился. Знаешь, что я люблю больше, чем хаос? Только себя. "
-            "Так что, если ты не готов мириться с моим величием, капризами и тем, что я временами вообще забываю о существовании персонала, — лучше уйди сейчас. Я даже не замечу.\n\n"
-            "<b>Должность</b>\n"
-            "Кем хочешь быть? Преподавателем? Целителем? Смотрителем леса? Выбирай, мне без разницы. Только учти: если облажаешься, я разочаруюсь. "
-            "А когда я разочаровываюсь, я начинаю искать развлечений. Обычно за чужой счёт. Ну так что, не передумал? Нет? Ну смотри.",
+            "<b>Выберите должность</b>\n\n"
+            "Доступные должности отмечены как свободные. Если должность занята или забронирована, она будет выделена.",
+            reply_markup=get_positions_keyboard(),
             parse_mode="HTML"
         )
         await state.update_data(last_bot_message_id=sent.message_id)
         await state.set_state(StaffForm.position)
     await callback.answer()
 
-# ---------- Обработчик кнопки "Назад" ----------
+# Обработчик кнопки "Назад"
 @router.callback_query(F.data == "back")
 async def go_back(callback: types.CallbackQuery, state: FSMContext):
     current_state = await state.get_state()
@@ -53,23 +51,19 @@ async def go_back(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("Нечего отменять")
         return
 
-    # Удаляем текущее сообщение (кнопку)
     await callback.message.delete()
 
-    # Проверяем ученик или персонал
     if current_state in STUDENT_PREV:
         prev = STUDENT_PREV[current_state]
         question = STUDENT_QUESTIONS.get(prev, "Вернулись к предыдущему шагу.")
         await state.set_state(prev)
-        # Определяем клавиатуру для предыдущего шага
         if prev == StudentForm.race:
             keyboard = get_race_keyboard_with_back()
         elif prev == StudentForm.name:
-            keyboard = None  # на первом шаге кнопки "Назад" нет
+            keyboard = None
         else:
             keyboard = get_back_keyboard()
 
-        # Удаляем предыдущее сообщение бота (если есть)
         data = await state.get_data()
         last_id = data.get('last_bot_message_id')
         if last_id:
@@ -91,10 +85,12 @@ async def go_back(callback: types.CallbackQuery, state: FSMContext):
         prev = STAFF_PREV[current_state]
         question = STAFF_QUESTIONS.get(prev, "Вернулись к предыдущему шагу.")
         await state.set_state(prev)
-        if prev == StaffForm.race:
+        if prev == StaffForm.position:
+            keyboard = get_positions_keyboard()
+        elif prev == StaffForm.race:
             keyboard = get_race_keyboard_with_back()
-        elif prev == StaffForm.position:
-            keyboard = None
+        elif prev == StaffForm.name or prev == StaffForm.position:
+            keyboard = None  # первый шаг (имя) – без кнопки
         else:
             keyboard = get_back_keyboard()
 
