@@ -17,6 +17,7 @@ RACE_MAP = {
 }
 
 def get_race_keyboard():
+    """Клавиатура с выбором расы (без кнопки назад)."""
     buttons = []
     row = []
     for i, (key, name) in enumerate(RACE_MAP.items(), 1):
@@ -27,6 +28,19 @@ def get_race_keyboard():
     if row:
         buttons.append(row)
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_race_keyboard_with_back():
+    """Клавиатура с выбором расы + кнопка 'Назад'."""
+    kb = get_race_keyboard()
+    # добавляем строку с кнопкой назад
+    kb.inline_keyboard.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="back")])
+    return kb
+
+def get_back_keyboard():
+    """Клавиатура только с кнопкой 'Назад'."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back")]
+    ])
 
 def get_main_menu_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
