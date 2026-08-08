@@ -1,8 +1,5 @@
-import os
-import html
-import logging
 import asyncio
-from dotenv import load_dotenv
+import html
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -12,21 +9,32 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiohttp import web
 
 # ---------- Загружаем секреты ----------
-load_dotenv()
+# НЕ используем load_dotenv() на продакшене – переменные берутся из окружения.
+# (Если нужен локальный .env – оставьте, но он не помешает, если файла нет)
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GROUP_CHAT_ID_RAW = os.getenv("GROUP_CHAT_ID")
-PORT = int(os.getenv("PORT", 10000))  # Render задаёт PORT
+GROUP_CHAT_ID_RAW = os.getenv("GROUP_CHAT_ID_RAW")  # Имя должно совпадать с вашим ключом
 
-# ВАЖНО: проверяем переменные ДО того как пытаемся превратить их в число.
-# Раньше int(None) падал с непонятной ошибкой раньше, чем срабатывала эта проверка.
-if not BOT_TOKEN or not GROUP_CHAT_ID_RAW:
-    raise ValueError("BOT_TOKEN и GROUP_CHAT_ID должны быть заданы в .env")
+# Диагностика – выведем в лог значения (убедитесь, что они не None)
+print(f"BOT_TOKEN = {BOT_TOKEN}", file=sys.stderr)
+print(f"GROUP_CHAT_ID_RAW = {GROUP_CHAT_ID_RAW}", file=sys.stderr)
 
-GROUP_CHAT_ID = int(GROUP_CHAT_ID_RAW)
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN не задан в переменных окружения")
+if not GROUP_CHAT_ID_RAW:
+    raise ValueError("GROUP_CHAT_ID_RAW не задан в переменных окружения")
+
+try:
+    GROUP_CHAT_ID = int(GROUP_CHAT_ID_RAW)
+except ValueError:
+    raise ValueError(f"GROUP_CHAT_ID_RAW должен быть числом, получено: {GROUP_CHAT_ID_RAW}")
+
+PORT = int(os.getenv("PORT", 10000))
 
 logging.basicConfig(level=logging.INFO)
 storage = MemoryStorage()
-bot = Bot(token=BOT_TOKEN)
+# Устанавливаем HTML-разметку по умолчанию
+bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher(storage=storage)
 
 # ---------- RACE_MAP (все 13 рас) ----------
