@@ -1,8 +1,7 @@
 import os
-import asyncio
+import html
 import logging
-import signal
-import time
+import asyncio
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command, StateFilter
@@ -15,7 +14,7 @@ from aiohttp import web
 # ---------- Загружаем секреты ----------
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")
+GROUP_CHAT_ID_RAW = os.getenv("GROUP_CHAT_ID")
 PORT = int(os.getenv("PORT", 10000))  # Render задаёт PORT
 
 # ВАЖНО: проверяем переменные ДО того как пытаемся превратить их в число.
