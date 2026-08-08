@@ -7,13 +7,11 @@ from config import GROUP_CHAT_ID
 from states import StaffForm
 from keyboards import get_race_keyboard_with_back, RACE_MAP, get_approve_reject_keyboard, get_back_keyboard
 from utils import esc, split_text
-from positions import reserve_position, release_reserved_by_user, occupy_position_for_user, get_position_status
 
 router = Router()
 logger = logging.getLogger(__name__)
 
-
-# ---------- Вспомогательная функция для удаления предыдущего сообщения ----------
+# Вспомогательная функция для удаления предыдущего сообщения
 async def cleanup_and_send(message: types.Message, state: FSMContext, text: str, reply_markup=None, parse_mode="HTML"):
     data = await state.get_data()
     last_id = data.get('last_bot_message_id')
@@ -26,54 +24,20 @@ async def cleanup_and_send(message: types.Message, state: FSMContext, text: str,
     await state.update_data(last_bot_message_id=sent.message_id)
     return sent
 
-
-# ---------- Выбор должности (callback) ----------
-@router.callback_query(StateFilter(StaffForm.position), F.data.startswith("pos_"))
-async def staff_position_chosen(callback: types.CallbackQuery, state: FSMContext):
-    data = callback.data
-    if data.endswith("_disabled"):
-        await callback.answer("Эта должность недоступна.", show_alert=True)
-        return
-
-    position = data[4:]  # убираем "pos_"
-    # Проверяем статус (на всякий случай)
-    status = get_position_status(position)
-    if status != "free":
-        await callback.answer("Эта должность уже занята или забронирована.", show_alert=True)
-        return
-
-    # Резервируем должность
-    success = reserve_position(position, callback.from_user.id, 0)
-    if not success:
-        await callback.answer("Не удалось зарезервировать должность.", show_alert=True)
-        return
-
-    await state.update_data(position=position)
-
-    # Удаляем сообщение с кнопками должностей
-    await callback.message.delete()
-
-    # Удаляем предыдущее сообщение бота (если было)
-    data_state = await state.get_data()
-    last_id = data_state.get('last_bot_message_id')
-    if last_id:
-        try:
-            await callback.bot.delete_message(callback.message.chat.id, last_id)
-        except Exception:
-            pass
-
-    # Переходим к имени
-    sent = await callback.message.answer(
+# ---------- Шаг 1: Ввод должности (текст) ----------
+@router.message(StateFilter(StaffForm.position))
+async def staff_position(message: types.Message, state: FSMContext):
+    await state.update_data(position=message.text)
+    await cleanup_and_send(
+        message,
+        state,
         "<b>Имя / Фамилия</b>\nПредставься. Только быстро. Если имя дурацкое, я всё равно забуду его через пять минут и буду звать тебя «эй, ты». "
         "Я так делаю со всеми, это не личное. Просто вы все для меня на одно лицо.",
-        reply_markup=get_back_keyboard(),
-        parse_mode="HTML"
+        reply_markup=get_back_keyboard()
     )
-    await state.update_data(last_bot_message_id=sent.message_id)
     await state.set_state(StaffForm.name)
-    await callback.answer()
 
-
+# ---------- Шаг 2: Имя ----------
 @router.message(StateFilter(StaffForm.name))
 async def staff_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
@@ -86,7 +50,7 @@ async def staff_name(message: types.Message, state: FSMContext):
     )
     await state.set_state(StaffForm.age)
 
-
+# ---------- Шаг 3: Возраст ----------
 @router.message(StateFilter(StaffForm.age))
 async def staff_age(message: types.Message, state: FSMContext):
     if not message.text or not message.text.isdigit():
@@ -116,7 +80,7 @@ async def staff_age(message: types.Message, state: FSMContext):
     )
     await state.set_state(StaffForm.race)
 
-
+# ---------- Шаг 4: Раса (callback) ----------
 @router.callback_query(StateFilter(StaffForm.race), F.data.startswith("race_"))
 async def staff_race(callback: types.CallbackQuery, state: FSMContext):
     key = callback.data.split("_", 1)[1]
@@ -135,10 +99,7 @@ async def staff_race(callback: types.CallbackQuery, state: FSMContext):
         except Exception:
             pass
 
-    sent = await callback.message.answer(
-        f"Выбрана раса: {esc(race_name)}"
-    )
-    # Сохраняем ID этого сообщения как последнее (можно не сохранять, но для чистоты)
+    sent = await callback.message.answer(f"Выбрана раса: {esc(race_name)}")
     await state.update_data(last_bot_message_id=sent.message_id)
 
     sent2 = await callback.message.answer(
@@ -151,7 +112,7 @@ async def staff_race(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(StaffForm.gender_height_weight)
     await callback.answer()
 
-
+# ---------- Шаг 5: Пол/Рост/Вес ----------
 @router.message(StateFilter(StaffForm.gender_height_weight))
 async def staff_gender_height_weight(message: types.Message, state: FSMContext):
     await state.update_data(gender_height_weight=message.text)
@@ -164,7 +125,7 @@ async def staff_gender_height_weight(message: types.Message, state: FSMContext):
     )
     await state.set_state(StaffForm.character)
 
-
+# ---------- Шаг 6: Характер ----------
 @router.message(StateFilter(StaffForm.character))
 async def staff_character(message: types.Message, state: FSMContext):
     text = message.text or ""
@@ -187,7 +148,7 @@ async def staff_character(message: types.Message, state: FSMContext):
     )
     await state.set_state(StaffForm.abilities)
 
-
+# ---------- Шаг 7: Способности ----------
 @router.message(StateFilter(StaffForm.abilities))
 async def staff_abilities(message: types.Message, state: FSMContext):
     await state.update_data(abilities=message.text)
@@ -200,7 +161,7 @@ async def staff_abilities(message: types.Message, state: FSMContext):
     )
     await state.set_state(StaffForm.weaknesses)
 
-
+# ---------- Шаг 8: Слабости ----------
 @router.message(StateFilter(StaffForm.weaknesses))
 async def staff_weaknesses(message: types.Message, state: FSMContext):
     await state.update_data(weaknesses=message.text)
@@ -213,7 +174,7 @@ async def staff_weaknesses(message: types.Message, state: FSMContext):
     )
     await state.set_state(StaffForm.facts)
 
-
+# ---------- Шаг 9: Факты ----------
 @router.message(StateFilter(StaffForm.facts))
 async def staff_facts(message: types.Message, state: FSMContext):
     await state.update_data(facts=message.text)
@@ -226,7 +187,7 @@ async def staff_facts(message: types.Message, state: FSMContext):
     )
     await state.set_state(StaffForm.appearance)
 
-
+# ---------- Шаг 10: Внешность ----------
 @router.message(StateFilter(StaffForm.appearance))
 async def staff_appearance(message: types.Message, state: FSMContext):
     await state.update_data(appearance=message.text)
@@ -240,7 +201,7 @@ async def staff_appearance(message: types.Message, state: FSMContext):
     )
     await state.set_state(StaffForm.biography)
 
-
+# ---------- Шаг 11: Биография (проверка длины) ----------
 @router.message(StateFilter(StaffForm.biography))
 async def staff_biography(message: types.Message, state: FSMContext):
     text = message.text or ""
@@ -268,8 +229,6 @@ async def staff_biography(message: types.Message, state: FSMContext):
     missing = [k for k in required_keys if k not in data]
     if missing:
         await message.answer(f"⚠️ Ошибка: не хватает данных: {', '.join(missing)}. Заполните анкету заново.")
-        # Освобождаем должность, так как анкета не будет отправлена
-        release_reserved_by_user(message.from_user.id)
         return
 
     full_text = (
@@ -310,8 +269,6 @@ async def staff_biography(message: types.Message, state: FSMContext):
             "⚠️ Произошла ошибка при отправке анкеты администраторам. Пожалуйста, попробуйте позже.",
             parse_mode="HTML"
         )
-        # Освобождаем должность при ошибке отправки
-        release_reserved_by_user(message.from_user.id)
         return
 
     await message.answer(
