@@ -1,66 +1,15 @@
 import logging
 from aiogram import Router, types, F
-from aiogram.filters import StateFilter, Command
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
 from config import GROUP_CHAT_ID
 from states import RejectReason
 from utils import esc
-from positions import occupy_position_for_user, release_reserved_by_user, free_position
 
 router = Router()
 logger = logging.getLogger(__name__)
 
-# ---------- Команда для администратора: освободить должность ----------
-@router.message(Command("free_position"))
-async def cmd_free_position(message: types.Message):
-    try:
-        member = await message.bot.get_chat_member(GROUP_CHAT_ID, message.from_user.id)
-    except Exception:
-        await message.answer("Не удалось проверить права.")
-        return
-    if member.status not in ("administrator", "creator"):
-        await message.answer("⛔ Только администраторы группы могут освобождать должности.")
-        return
-
-    args = message.text.split(maxsplit=1)
-    if len(args) < 2:
-        await message.answer("Использование: /free_position <название должности>")
-        return
-    position = args[1].strip()
-    if free_position(position):
-        await message.answer(f"✅ Должность '{position}' освобождена.")
-    else:
-        await message.answer(f"❌ Не удалось освободить должность '{position}'. Проверьте название или она уже свободна.")
-
-
-# ---------- Команда для просмотра статусов ----------
-@router.message(Command("list_positions"))
-async def cmd_list_positions(message: types.Message):
-    try:
-        member = await message.bot.get_chat_member(GROUP_CHAT_ID, message.from_user.id)
-    except Exception:
-        await message.answer("Не удалось проверить права.")
-        return
-    if member.status not in ("administrator", "creator"):
-        await message.answer("⛔ Только администраторы могут просматривать статусы.")
-        return
-
-    from positions import get_all_positions_status
-    data = get_all_positions_status()
-    lines = ["📋 <b>Статусы должностей</b>:"]
-    for pos, info in data.items():
-        status = info["status"]
-        status_text = {
-            "free": "🟢 свободна",
-            "reserved": "🟡 забронирована (на проверке)",
-            "occupied": "🔴 занята"
-        }.get(status, status)
-        lines.append(f"{pos} — {status_text}")
-    await message.answer("\n".join(lines), parse_mode="HTML")
-
-
-# ---------- Обработка approve / reject ----------
 @router.callback_query(F.data.startswith(("approve_", "reject_")))
 async def handle_approve_reject(callback: types.CallbackQuery, state: FSMContext):
     parts = callback.data.split("_", 1)
@@ -82,18 +31,12 @@ async def handle_approve_reject(callback: types.CallbackQuery, state: FSMContext
         await callback.answer("⛔ Только администраторы группы могут принимать решения.", show_alert=True)
         return
 
-    # Убираем кнопки у анкеты
     await callback.message.edit_reply_markup(reply_markup=None)
 
     admin = callback.from_user
     admin_mention = f"@{admin.username}" if admin.username else f"<a href='tg://user?id={admin.id}'>{esc(admin.first_name)}</a>"
 
     if action == "approve":
-        # Переводим зарезервированную должность в "occupied"
-        occupied = occupy_position_for_user(user_id)
-        if not occupied:
-            logger.warning(f"Не удалось занять должность для пользователя {user_id} (возможно, не была зарезервирована)")
-
         try:
             await callback.bot.send_message(
                 GROUP_CHAT_ID,
@@ -117,11 +60,6 @@ async def handle_approve_reject(callback: types.CallbackQuery, state: FSMContext
         await callback.answer("Анкета принята", show_alert=False)
 
     elif action == "reject":
-        # Освобождаем зарезервированную должность
-        released = release_reserved_by_user(user_id)
-        if not released:
-            logger.warning(f"Не удалось освободить должность для пользователя {user_id} (возможно, не была зарезервирована)")
-
         await state.update_data(
             user_id=user_id,
             original_message_id=callback.message.message_id,
@@ -140,7 +78,6 @@ async def handle_approve_reject(callback: types.CallbackQuery, state: FSMContext
         except Exception as e:
             logger.error(f"Ошибка при запросе причины отклонения: {e}")
             await callback.answer("⚠️ Ошибка при запросе причины", show_alert=True)
-
 
 @router.message(StateFilter(RejectReason.waiting_for_reason))
 async def process_reject_reason(message: types.Message, state: FSMContext):
