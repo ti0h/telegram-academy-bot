@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from .positions import load_positions
+from positions import load_positions
 
 RACE_MAP = {
     "dark_elf": "Тёмный эльф",
@@ -18,7 +18,6 @@ RACE_MAP = {
 }
 
 def get_race_keyboard():
-    """Клавиатура с выбором расы (без кнопки назад)."""
     buttons = []
     row = []
     for i, (key, name) in enumerate(RACE_MAP.items(), 1):
@@ -55,7 +54,6 @@ def get_approve_reject_keyboard(user_id: int):
     ])
 
 def get_positions_keyboard():
-    """Клавиатура со списком должностей и их статусами."""
     data = load_positions()
     buttons = []
     for pos, info in data.items():
@@ -65,7 +63,6 @@ def get_positions_keyboard():
             label += " (забронирована)"
         elif status == "occupied":
             label += " (занята)"
-        # Если свободна – кнопка активна, иначе disabled (но мы просто не даём выбрать)
         if status == "free":
             callback_data = f"pos_{pos}"
         else:
