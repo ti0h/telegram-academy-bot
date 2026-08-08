@@ -3,7 +3,7 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 
 from states import Choice, StudentForm, StaffForm, STUDENT_PREV, STAFF_PREV, STUDENT_QUESTIONS, STAFF_QUESTIONS
-from keyboards import get_main_menu_keyboard, get_race_keyboard_with_back, get_back_keyboard, get_positions_keyboard
+from keyboards import get_main_menu_keyboard, get_race_keyboard_with_back, get_back_keyboard
 
 router = Router()
 
@@ -32,18 +32,18 @@ async def process_choice(callback: types.CallbackQuery, state: FSMContext):
         await state.update_data(last_bot_message_id=sent.message_id)
         await state.set_state(StudentForm.name)
     elif callback.data == "choice_staff":
-        # Отправляем клавиатуру с должностями
+        # Теперь просим ввести должность вручную
         sent = await callback.message.answer(
-            "<b>Выберите должность</b>\n\n"
-            "Доступные должности отмечены как свободные. Если должность занята или забронирована, она будет выделена.",
-            reply_markup=get_positions_keyboard(),
+            "<b>Для персонала</b>\n\n"
+            "Напиши свою должность (например, «Учитель магии» или «Директор»).\n"
+            "Можешь придумать любую роль — она будет указана в анкете.",
             parse_mode="HTML"
         )
         await state.update_data(last_bot_message_id=sent.message_id)
-        await state.set_state(StaffForm.position)
+        await state.set_state(StaffForm.position)   # теперь это текстовое состояние
     await callback.answer()
 
-# Обработчик кнопки "Назад"
+# Обработчик кнопки "Назад" (без изменений, но нужно адаптировать для StaffForm.position)
 @router.callback_query(F.data == "back")
 async def go_back(callback: types.CallbackQuery, state: FSMContext):
     current_state = await state.get_state()
@@ -85,12 +85,10 @@ async def go_back(callback: types.CallbackQuery, state: FSMContext):
         prev = STAFF_PREV[current_state]
         question = STAFF_QUESTIONS.get(prev, "Вернулись к предыдущему шагу.")
         await state.set_state(prev)
-        if prev == StaffForm.position:
-            keyboard = get_positions_keyboard()
-        elif prev == StaffForm.race:
+        if prev == StaffForm.race:
             keyboard = get_race_keyboard_with_back()
-        elif prev == StaffForm.name or prev == StaffForm.position:
-            keyboard = None  # первый шаг (имя) – без кнопки
+        elif prev == StaffForm.position:
+            keyboard = None   # первый шаг – без кнопки назад
         else:
             keyboard = get_back_keyboard()
 
