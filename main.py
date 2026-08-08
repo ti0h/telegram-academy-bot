@@ -26,7 +26,7 @@ GROUP_CHAT_ID = int(GROUP_CHAT_ID_RAW)
 
 logging.basicConfig(level=logging.INFO)
 storage = MemoryStorage()
-bot = Bot(token=BOT_TOKEN)
+bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher(storage=storage)
 
 # ---------- RACE_MAP (все 13 рас) ----------
@@ -601,7 +601,7 @@ async def start_web_server():
 async def main():
     # Устанавливаем HTML как parse_mode по умолчанию для всех сообщений бота,
     # чтобы не указывать его каждый раз вручную.
-    bot.parse_mode = "HTML"
+    # bot.parse_mode = "HTML"
     await start_web_server()
     await dp.start_polling(bot)
 
