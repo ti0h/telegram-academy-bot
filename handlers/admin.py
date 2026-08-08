@@ -51,7 +51,7 @@ async def handle_approve_reject(callback: types.CallbackQuery, state: FSMContext
         try:
             await callback.bot.send_message(
                 user_id,
-                "🎉 Ваша анкета <b>одобрена</b>! Добро пожаловать.",
+                "<i>— Что ж... неожиданно достойная работа. Поздравляю. Теперь ты официально стал частью Академии Пафент. Надеюсь, твоё пребывание здесь окажется долгим. Хотя... это уже зависит исключительно от тебя.</i>\n\n https://t.me/+Iji2mDCmE24yMTNi",
                 parse_mode="HTML"
             )
         except Exception as e:
@@ -121,7 +121,7 @@ async def process_reject_reason(message: types.Message, state: FSMContext):
     try:
         await message.bot.send_message(
             user_id,
-            f"❌ Ваша анкета <b>отклонена</b>.\nПричина: {esc(reason)}",
+            f"— Хм... Нет. Пока нет. Боюсь, этого недостаточно. В анкете обнаружились ошибки, и, прежде чем двери Академии откроются для тебя, их придётся исправить. Ознакомься с замечаниями ниже, внеси изменения и отправь анкету повторно. На этот раз постарайся быть внимательнее.\n\nЗамечания: {esc(reason)}",
             parse_mode="HTML"
         )
     except Exception as e:
