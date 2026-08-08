@@ -4,26 +4,16 @@ from typing import Dict, Optional
 
 POSITIONS_FILE = "positions.json"
 
-# Список всех возможных должностей (можно редактировать)
+# 👇 Здесь задаём нужные должности
 ALL_POSITIONS = [
-    "Преподаватель",
-    "Целитель",
-    "Смотритель леса",
-    "Библиотекарь",
-    "Мастер зелий",
-    "Хранитель артефактов",
-    "Стражник",
-    "Повар",
-    "Садовник",
-    "Ученый",
-    "Архивариус",
-    "Переводчик",
-    "Музыкант",
+    "Директор",
+    "Учитель математики",
+    "Учитель магии",
+    "Учитель высшей магии"
 ]
 
 
 def load_positions() -> Dict:
-    """Загружает данные из JSON или создаёт начальный файл."""
     if not os.path.exists(POSITIONS_FILE):
         data = {p: {"status": "free", "user_id": None, "message_id": None} for p in ALL_POSITIONS}
         save_positions(data)
@@ -45,7 +35,6 @@ def get_position_status(position: str) -> Optional[str]:
 
 
 def reserve_position(position: str, user_id: int, message_id: int = 0) -> bool:
-    """Резервирует должность для пользователя."""
     data = load_positions()
     if position not in data or data[position]["status"] != "free":
         return False
@@ -57,7 +46,6 @@ def reserve_position(position: str, user_id: int, message_id: int = 0) -> bool:
 
 
 def occupy_position_for_user(user_id: int) -> bool:
-    """Переводит зарезервированную должность пользователя в статус occupied."""
     data = load_positions()
     for pos, info in data.items():
         if info["status"] == "reserved" and info["user_id"] == user_id:
@@ -68,7 +56,6 @@ def occupy_position_for_user(user_id: int) -> bool:
 
 
 def release_reserved_by_user(user_id: int) -> bool:
-    """Освобождает все зарезервированные должности для пользователя (при отклонении)."""
     data = load_positions()
     changed = False
     for pos, info in data.items():
@@ -83,12 +70,11 @@ def release_reserved_by_user(user_id: int) -> bool:
 
 
 def free_position(position: str) -> bool:
-    """Принудительно освобождает должность (для админа)."""
     data = load_positions()
     if position not in data:
         return False
     if data[position]["status"] == "free":
-        return False  # уже свободна
+        return False
     data[position]["status"] = "free"
     data[position]["user_id"] = None
     data[position]["message_id"] = None
