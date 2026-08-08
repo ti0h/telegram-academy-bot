@@ -177,7 +177,7 @@ async def staff_biography(message: types.Message, state: FSMContext):
         await message.answer(f"⚠️ Ошибка: не хватает данных: {', '.join(missing)}. Заполните анкету заново.")
         return
 
-    text = (
+    full_text = (
         "📄 <b>Новая анкета персонала</b>\n\n"
         f"<b>Должность:</b> {esc(data['position'])}\n"
         f"<b>Имя/Фамилия:</b> {esc(data['name'])}\n"
@@ -194,9 +194,23 @@ async def staff_biography(message: types.Message, state: FSMContext):
 
     keyboard = get_approve_reject_keyboard(message.from_user.id)
 
+    from utils import split_text
+    parts = split_text(full_text)
+
     try:
-        await message.bot.send_message(GROUP_CHAT_ID, text, reply_markup=keyboard, parse_mode="HTML")
-        logger.info(f"Анкета персонала от {message.from_user.id} отправлена в группу {GROUP_CHAT_ID}")
+        await message.bot.send_message(
+            GROUP_CHAT_ID,
+            parts[0],
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        for part in parts[1:]:
+            await message.bot.send_message(
+                GROUP_CHAT_ID,
+                part,
+                parse_mode="HTML"
+            )
+        logger.info(f"Анкета персонала от {message.from_user.id} отправлена в группу (частей: {len(parts)})")
     except Exception as e:
         logger.error(f"Ошибка отправки анкеты персонала в группу: {e}")
         await message.answer(
