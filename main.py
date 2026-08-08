@@ -33,8 +33,6 @@ storage = MemoryStorage()
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 dp = Dispatcher(storage=storage)
 
-# ... остальной код без изменений ...
-
 # ---------- RACE_MAP (все 13 рас) ----------
 RACE_MAP = {
     "dark_elf": "Тёмный эльф",
@@ -139,7 +137,8 @@ async def process_choice(callback: types.CallbackQuery, state: FSMContext):
             callback.message.chat.id,
             "<b>Для ученика</b>\n\n"
             "Назовись. Только без титулов, умоляю. «Лорд Тьмы», «Повелительница Звёзд» — я этого не вынесу. "
-            "У меня у самого их десяток, и я не разбрасываюсь. Просто имя. Мне, в общем-то, всё равно, но формальности требуют.", parse_mode="html"
+            "У меня у самого их десяток, и я не разбрасываюсь. Просто имя. Мне, в общем-то, всё равно, но формальности требуют.",
+            parse_mode="HTML"
         )
         await state.set_state(StudentForm.name)
         await callback.answer()
@@ -152,7 +151,8 @@ async def process_choice(callback: types.CallbackQuery, state: FSMContext):
             "Так что, если ты не готов мириться с моим величием, капризами и тем, что я временами вообще забываю о существовании персонала, — лучше уйди сейчас. Я даже не замечу.\n\n"
             "<b>Должность</b>\n"
             "Кем хочешь быть? Преподавателем? Целителем? Смотрителем леса? Выбирай, мне без разницы. Только учти: если облажаешься, я разочаруюсь. "
-            "А когда я разочаровываюсь, я начинаю искать развлечений. Обычно за чужой счёт. Ну так что, не передумал? Нет? Ну смотри."
+            "А когда я разочаровываюсь, я начинаю искать развлечений. Обычно за чужой счёт. Ну так что, не передумал? Нет? Ну смотри.",
+            parse_mode="HTML"
         )
         await state.set_state(StaffForm.position)
         await callback.answer()
@@ -165,7 +165,8 @@ async def student_name(message: types.Message, state: FSMContext):
     await message.answer(
         "<b>Раса</b>\nИ кто ты у нас по природе? Человек, эльф, недодемон? Пока ты будешь перечислять, я, пожалуй, пересчитаю свои рога. "
         "О, у меня их два. Прекрасных. Тёмно-синих. А у тебя? Ну давай, не томи, кто ты там по расовой принадлежности.",
-        reply_markup=get_race_keyboard()
+        reply_markup=get_race_keyboard(),
+        parse_mode="HTML"
     )
     await state.set_state(StudentForm.race)
 
@@ -181,7 +182,8 @@ async def student_race(callback: types.CallbackQuery, state: FSMContext):
         await bot.send_message(
             callback.message.chat.id,
             "<b>Возраст</b>\nНе подскажешь возраст? Мой я давно не считаю, потому что цифры не способны вместить моё величие. "
-            "А вот твой — назови. Сверься с регламентом. Если тебе под сотню, а ты прёшься на первый курс, я даже не разозлюсь — мне просто станет ещё скучнее, чем было."
+            "А вот твой — назови. Сверься с регламентом. Если тебе под сотню, а ты прёшься на первый курс, я даже не разозлюсь — мне просто станет ещё скучнее, чем было.",
+            parse_mode="HTML"
         )
         await state.set_state(StudentForm.age)
         await callback.answer()
@@ -200,7 +202,8 @@ async def student_age(message: types.Message, state: FSMContext):
         return
     await state.update_data(age=age)
     await message.answer(
-        "<b>Пол / Рост / Вес</b>\nПол, рост, вес. Три скучных слова. Если у тебя есть что-то интересное в пропорциях — я, может, и подниму бровь. Но вряд ли."
+        "<b>Пол / Рост / Вес</b>\nПол, рост, вес. Три скучных слова. Если у тебя есть что-то интересное в пропорциях — я, может, и подниму бровь. Но вряд ли.",
+        parse_mode="HTML"
     )
     await state.set_state(StudentForm.gender_height_weight)
 
@@ -210,7 +213,8 @@ async def student_gender_height_weight(message: types.Message, state: FSMContext
     await state.update_data(gender_height_weight=message.text)
     await message.answer(
         "<b>Характер</b>\nОпиши свой характер. Мне, честно говоря, глубоко безразлично, что ты там о себе думаешь, но правила есть правила. "
-        "Четыре строки. «Добрый и отзывчивый» — и я зевну так, что ты испугаешься. Лучше уж пиши, что ты скрытый маньяк. Хоть поржу."
+        "Четыре строки. «Добрый и отзывчивый» — и я зевну так, что ты испугаешься. Лучше уж пиши, что ты скрытый маньяк. Хоть поржу.",
+        parse_mode="HTML"
     )
     await state.set_state(StudentForm.character)
 
@@ -225,7 +229,8 @@ async def student_character(message: types.Message, state: FSMContext):
     await message.answer(
         "<b>Способности</b>\nНа что ты способен? Не надейся меня впечатлить — я видел магов, которые создавали миры. Я сам создавал миры. "
         "Но давай, расскажи, как ты умеешь зажигать свечку пальцем. Только всесилие, бессмертие и прочее — ЗАПРЕЩЕНО. Это моё. "
-        "Я и так слишком щедр, позволяя тебе дышать одним воздухом со мной."
+        "Я и так слишком щедр, позволяя тебе дышать одним воздухом со мной.",
+        parse_mode="HTML"
     )
     await state.set_state(StudentForm.abilities)
 
@@ -235,7 +240,8 @@ async def student_abilities(message: types.Message, state: FSMContext):
     await state.update_data(abilities=message.text)
     await message.answer(
         "<b>Слабости и страхи</b>\nЧего ты боишься? Меня, надеюсь, уже боишься. Если нет — ничего, это приходит со временем. "
-        "Слабости способностей тоже пиши. Мне это пригодится, чтобы… ну, просто чтобы было. Я коллекционирую чужие уязвимости. Такое вот хобби у бессмертного красавца."
+        "Слабости способностей тоже пиши. Мне это пригодится, чтобы… ну, просто чтобы было. Я коллекционирую чужие уязвимости. Такое вот хобби у бессмертного красавца.",
+        parse_mode="HTML"
     )
     await state.set_state(StudentForm.weaknesses)
 
@@ -245,7 +251,8 @@ async def student_weaknesses(message: types.Message, state: FSMContext):
     await state.update_data(weaknesses=message.text)
     await message.answer(
         "<b>Факты</b>\nРазвлеки меня. Любимая еда, хобби, шрамы. Только не вздумай писать «люблю закаты и прогулки» — я тут же потеряю к тебе остатки интереса. "
-        "А их и так немного. Я пока подумаю, не добавить ли ещё один мир. Или леденцов. Я люблю леденцы."
+        "А их и так немного. Я пока подумаю, не добавить ли ещё один мир. Или леденцов. Я люблю леденцы.",
+        parse_mode="HTML"
     )
     await state.set_state(StudentForm.facts)
 
@@ -255,7 +262,8 @@ async def student_facts(message: types.Message, state: FSMContext):
     await state.update_data(facts=message.text)
     await message.answer(
         "<b>Внешность</b>\nОпиши, как выглядишь. Если есть картинка — две строки. Я сравню со своим отражением. Спойлер: ты проиграешь. "
-        "Мои рога, кстати, светятся в темноте. Бесполезно, но красиво. А ты? Ладно, пиши уже, не заставляй меня ждать. Ждать я не люблю, хотя ты того не стоишь."
+        "Мои рога, кстати, светятся в темноте. Бесполезно, но красиво. А ты? Ладно, пиши уже, не заставляй меня ждать. Ждать я не люблю, хотя ты того не стоишь.",
+        parse_mode="HTML"
     )
     await state.set_state(StudentForm.appearance)
 
@@ -269,7 +277,8 @@ async def student_appearance(message: types.Message, state: FSMContext):
     await state.update_data(appearance=message.text)
     await message.answer(
         "<b>Биография</b>\nОт восьми строк. Откуда ты, кто родители, как ты вообще дожил до этого момента. Мне это нужно не для того, чтобы проникнуться твоей драмой — упаси боже, — "
-        "а чтобы понять, сколько ты протянешь в моей Академии. Если биография скучная — приукрась. Я разрешаю. Я сегодня щедрый. Зеркало сказало, что я неотразим, и я ему верю."
+        "а чтобы понять, сколько ты протянешь в моей Академии. Если биография скучная — приукрась. Я разрешаю. Я сегодня щедрый. Зеркало сказало, что я неотразим, и я ему верю.",
+        parse_mode="HTML"
     )
     await state.set_state(StudentForm.biography)
 
@@ -283,7 +292,8 @@ async def student_biography(message: types.Message, state: FSMContext):
     await state.update_data(biography=message.text)
     await message.answer(
         "<b>Курс</b>\nНа какой курс собрался? Сверься с регламентом, я не буду повторять дважды. Если перепутаешь — останешься на первом курсе навсегда. "
-        "Мне-то что, я всё равно буду тут, вечный и прекрасный, а вот ты состаришься за партой. Забавно? Возможно."
+        "Мне-то что, я всё равно буду тут, вечный и прекрасный, а вот ты состаришься за партой. Забавно? Возможно.",
+        parse_mode="HTML"
     )
     await state.set_state(StudentForm.course)
 
@@ -314,10 +324,11 @@ async def student_course(message: types.Message, state: FSMContext):
          InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{message.from_user.id}")]
     ])
 
-    await bot.send_message(GROUP_CHAT_ID, text, reply_markup=keyboard)
+    await bot.send_message(GROUP_CHAT_ID, text, reply_markup=keyboard, parse_mode="HTML")
     await message.answer(
         "✅ Анкета отправлена на проверку.\n\n"
-        "<b>На правки — три дня.</b> Не успеешь — твои проблемы. Мне не к спеху. Я могу ждать вечность. Но тебе-то, смертный, вечность не светит."
+        "<b>На правки — три дня.</b> Не успеешь — твои проблемы. Мне не к спеху. Я могу ждать вечность. Но тебе-то, смертный, вечность не светит.",
+        parse_mode="HTML"
     )
 
 
@@ -327,7 +338,8 @@ async def staff_position(message: types.Message, state: FSMContext):
     await state.update_data(position=message.text)
     await message.answer(
         "<b>Имя / Фамилия</b>\nПредставься. Только быстро. Если имя дурацкое, я всё равно забуду его через пять минут и буду звать тебя «эй, ты». "
-        "Я так делаю со всеми, это не личное. Просто вы все для меня на одно лицо."
+        "Я так делаю со всеми, это не личное. Просто вы все для меня на одно лицо.",
+        parse_mode="HTML"
     )
     await state.set_state(StaffForm.name)
 
@@ -337,7 +349,8 @@ async def staff_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
     await message.answer(
         "<b>Возраст</b>\nСколько тебе лет? Мне не важно, но анкета требует. Я в это время полирую рога. Они у меня, знаешь ли, требуют ухода. "
-        "Не то что твоя биография. Кстати, возраст. Жду."
+        "Не то что твоя биография. Кстати, возраст. Жду.",
+        parse_mode="HTML"
     )
     await state.set_state(StaffForm.age)
 
@@ -355,7 +368,8 @@ async def staff_age(message: types.Message, state: FSMContext):
     await message.answer(
         "<b>Раса</b>\nИ кто ты у нас по природе? Человек, эльф, недодемон? Пока ты будешь перечислять, я, пожалуй, пересчитаю свои рога. "
         "О, у меня их два. Прекрасных. Тёмно-синих. А у тебя? Ну давай, не томи, кто ты там по расовой принадлежности.",
-        reply_markup=get_race_keyboard()
+        reply_markup=get_race_keyboard(),
+        parse_mode="HTML"
     )
     await state.set_state(StaffForm.race)
 
@@ -371,7 +385,8 @@ async def staff_race(callback: types.CallbackQuery, state: FSMContext):
         await bot.send_message(
             callback.message.chat.id,
             "<b>Пол / Рост / Вес</b>\nКто ты? пол, рост, вес. Кратко. Пока ты пишешь, я прикидываю, достаточно ли хорош сегодня мой профиль. "
-            "Кажется, да. Особенно правый рог. Левый тоже ничего. Ладно, я отвлёкся. Ты всё ещё тут? Пиши давай."
+            "Кажется, да. Особенно правый рог. Левый тоже ничего. Ладно, я отвлёкся. Ты всё ещё тут? Пиши давай.",
+            parse_mode="HTML"
         )
         await state.set_state(StaffForm.gender_height_weight)
         await callback.answer()
@@ -384,7 +399,8 @@ async def staff_gender_height_weight(message: types.Message, state: FSMContext):
     await state.update_data(gender_height_weight=message.text)
     await message.answer(
         "<b>Характер</b>\nРасскажи, с кем мне предстоит делить воздух. Я надеюсь, ты не зануда. Я ненавижу зануд. Если ты садист — отлично, но помни: главный садист здесь я. "
-        "И я ревнив. Не посягай на моё место, и мы поладим. Наверное. Не уверен. Мне вообще всё равно."
+        "И я ревнив. Не посягай на моё место, и мы поладим. Наверное. Не уверен. Мне вообще всё равно.",
+        parse_mode="HTML"
     )
     await state.set_state(StaffForm.character)
 
@@ -399,7 +415,8 @@ async def staff_character(message: types.Message, state: FSMContext):
     await message.answer(
         "<b>Способности, магия и магическое направление</b>\nЧто ты умеешь? Кроме как вызывать у меня лёгкую скуку. "
         "Всесилие, бессмертие, антимагия — моё. Даже не дыши в их сторону. Если твои способности — что-то вроде «хорошо готовлю зелья», то хотя бы готовь их с фантазией. "
-        "Я люблю, когда красиво. Себя я люблю больше, но и красоту ценю."
+        "Я люблю, когда красиво. Себя я люблю больше, но и красоту ценю.",
+        parse_mode="HTML"
     )
     await state.set_state(StaffForm.abilities)
 
@@ -409,7 +426,8 @@ async def staff_abilities(message: types.Message, state: FSMContext):
     await state.update_data(abilities=message.text)
     await message.answer(
         "<b>Слабости, страхи</b>\nВсё выкладывай. Я, как истинный коллекционер, бережно храню чужие уязвимости в своей голове. "
-        "Если ты вампир и боишься солнечного света — не переживай, в моей Академии всегда сумрачно. Я тоже люблю сумрак. Он мне идёт."
+        "Если ты вампир и боишься солнечного света — не переживай, в моей Академии всегда сумрачно. Я тоже люблю сумрак. Он мне идёт.",
+        parse_mode="HTML"
     )
     await state.set_state(StaffForm.weaknesses)
 
@@ -419,7 +437,8 @@ async def staff_weaknesses(message: types.Message, state: FSMContext):
     await state.update_data(weaknesses=message.text)
     await message.answer(
         "<b>Факты</b>\nПривычки, хобби, бывшие работы. У меня, например, есть хобби — создавать миры и забывать о них. Ещё я коллекционирую проклятия. "
-        "А ты? Только не говори, что вышиваешь крестиком. Я же засмею. И буду смеяться долго. У меня смех красивый, но обидный."
+        "А ты? Только не говори, что вышиваешь крестиком. Я же засмею. И буду смеяться долго. У меня смех красивый, но обидный.",
+        parse_mode="HTML"
     )
     await state.set_state(StaffForm.facts)
 
@@ -429,7 +448,8 @@ async def staff_facts(message: types.Message, state: FSMContext):
     await state.update_data(facts=message.text)
     await message.answer(
         "<b>Внешность</b>\nКартинка или описание. Только не пытайся выглядеть лучше меня. Это бессмысленно. Я — произведение искусства, а ты — так, эскиз. "
-        "Одежду тоже опиши. Если ты одет как пугало, я переодену тебя сам. Не из заботы — просто ты будешь портить мне вид."
+        "Одежду тоже опиши. Если ты одет как пугало, я переодену тебя сам. Не из заботы — просто ты будешь портить мне вид.",
+        parse_mode="HTML"
     )
     await state.set_state(StaffForm.appearance)
 
@@ -443,7 +463,8 @@ async def staff_appearance(message: types.Message, state: FSMContext):
     await state.update_data(appearance=message.text)
     await message.answer(
         "<b>Биография</b>\nГде учился, кого предавал, почему решил, что достоин служить мне. Чтобы стать преподавателем, сдавал экзамен. "
-        "Я не принимаю экзамены, я выше этого. Но биографию прочту. Если она скучная — я добавлю в неё красок. В основном красных. Люблю красный."
+        "Я не принимаю экзамены, я выше этого. Но биографию прочту. Если она скучная — я добавлю в неё красок. В основном красных. Люблю красный.",
+        parse_mode="HTML"
     )
     await state.set_state(StaffForm.biography)
 
@@ -478,11 +499,12 @@ async def staff_biography(message: types.Message, state: FSMContext):
          InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{message.from_user.id}")]
     ])
 
-    await bot.send_message(GROUP_CHAT_ID, text, reply_markup=keyboard)
+    await bot.send_message(GROUP_CHAT_ID, text, reply_markup=keyboard, parse_mode="HTML")
     await message.answer(
         "✅ Анкета отправлена на проверку.\n\n"
         "<b>Бронь — неделя. Анкету править — три дня.</b> Если не успеешь… да плевать, если честно. Найдёшь другую работу. Или не найдёшь. "
-        "Я в любом случае останусь тут — великий, прекрасный и абсолютно довольный собой."
+        "Я в любом случае останусь тут — великий, прекрасный и абсолютно довольный собой.",
+        parse_mode="HTML"
     )
 
 
@@ -517,9 +539,18 @@ async def handle_group_action(callback: types.CallbackQuery, state: FSMContext):
 
     if action == "approve":
         new_text = callback.message.text + f"\n\n✅ <b>Одобрено</b> администратором {admin_mention}"
-        await bot.edit_message_text(new_text, chat_id=GROUP_CHAT_ID, message_id=callback.message.message_id)
+        await bot.edit_message_text(
+            new_text,
+            chat_id=GROUP_CHAT_ID,
+            message_id=callback.message.message_id,
+            parse_mode="HTML"
+        )
         try:
-            await bot.send_message(user_id, "🎉 Ваша анкета <b>одобрена</b>! Добро пожаловать.")
+            await bot.send_message(
+                user_id,
+                "🎉 Ваша анкета <b>одобрена</b>! Добро пожаловать.",
+                parse_mode="HTML"
+            )
         except Exception as e:
             logging.warning("Не удалось уведомить пользователя %s: %s", user_id, e)
         await callback.answer("Анкета принята", show_alert=False)
@@ -534,7 +565,8 @@ async def handle_group_action(callback: types.CallbackQuery, state: FSMContext):
         )
         request_msg = await bot.send_message(
             GROUP_CHAT_ID,
-            f"👤 {admin_mention}, напишите <b>причину отклонения</b> в ответ на это сообщение."
+            f"👤 {admin_mention}, напишите <b>причину отклонения</b> в ответ на это сообщение.",
+            parse_mode="HTML"
         )
         await state.update_data(request_message_id=request_msg.message_id)
         await state.set_state(RejectReason.waiting_for_reason)
@@ -574,13 +606,22 @@ async def process_reject_reason(message: types.Message, state: FSMContext):
 
     new_text = original_text + f"\n\n❌ <b>Отклонено</b> администратором {admin_mention}\n<b>Причина:</b> {esc(reason)}"
     try:
-        await bot.edit_message_text(new_text, chat_id=GROUP_CHAT_ID, message_id=original_msg_id)
+        await bot.edit_message_text(
+            new_text,
+            chat_id=GROUP_CHAT_ID,
+            message_id=original_msg_id,
+            parse_mode="HTML"
+        )
     except Exception as e:
         await message.answer(f"⚠️ Ошибка редактирования: {esc(e)}")
         return
 
     try:
-        await bot.send_message(user_id, f"❌ Ваша анкета <b>отклонена</b>.\nПричина: {esc(reason)}")
+        await bot.send_message(
+            user_id,
+            f"❌ Ваша анкета <b>отклонена</b>.\nПричина: {esc(reason)}",
+            parse_mode="HTML"
+        )
     except Exception as e:
         logging.warning("Не удалось уведомить пользователя %s: %s", user_id, e)
 
@@ -605,9 +646,7 @@ async def start_web_server():
 
 
 async def main():
-    # Устанавливаем HTML как parse_mode по умолчанию для всех сообщений бота,
-    # чтобы не указывать его каждый раз вручную.
-    # bot.parse_mode = "HTML"
+    # Глобальный parse_mode уже задан через DefaultBotProperties, но явное указание надёжнее
     await start_web_server()
     await dp.start_polling(bot)
 
