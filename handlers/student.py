@@ -177,7 +177,8 @@ async def student_course(message: types.Message, state: FSMContext):
         await message.answer(f"⚠️ Ошибка: не хватает данных: {', '.join(missing)}. Заполните анкету заново.")
         return
 
-    text = (
+    # Формируем полный текст анкеты
+    full_text = (
         "📄 <b>Новая анкета ученика</b>\n\n"
         f"<b>Имя и фамилия:</b> {esc(data['name'])}\n"
         f"<b>Раса:</b> {esc(data['race'])}\n"
@@ -194,9 +195,26 @@ async def student_course(message: types.Message, state: FSMContext):
 
     keyboard = get_approve_reject_keyboard(message.from_user.id)
 
+    # Разбиваем текст на части
+    from utils import split_text
+    parts = split_text(full_text)
+
     try:
-        await message.bot.send_message(GROUP_CHAT_ID, text, reply_markup=keyboard, parse_mode="HTML")
-        logger.info(f"Анкета ученика от {message.from_user.id} отправлена в группу {GROUP_CHAT_ID}")
+        # Отправляем первую часть с клавиатурой
+        await message.bot.send_message(
+            GROUP_CHAT_ID,
+            parts[0],
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        # Остальные части без клавиатуры
+        for part in parts[1:]:
+            await message.bot.send_message(
+                GROUP_CHAT_ID,
+                part,
+                parse_mode="HTML"
+            )
+        logger.info(f"Анкета ученика от {message.from_user.id} отправлена в группу (частей: {len(parts)})")
     except Exception as e:
         logger.error(f"Ошибка отправки анкеты ученика в группу: {e}")
         await message.answer(
