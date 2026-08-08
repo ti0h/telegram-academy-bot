@@ -36,7 +36,7 @@ async def process_choice(callback: types.CallbackQuery, state: FSMContext):
         sent = await callback.message.answer(
             "<b>Для персонала</b>\n\n"
             "Напиши свою должность (например, «Учитель магии» или «Директор»).\n"
-            "Можешь придумать любую роль — она будет указана в анкете.",
+            "Список с доступными должностями есть в регламенте академии, выбирать только оттуда, если вы хотите дополнительную роль обратитесь к администрации.",
             parse_mode="HTML"
         )
         await state.update_data(last_bot_message_id=sent.message_id)
