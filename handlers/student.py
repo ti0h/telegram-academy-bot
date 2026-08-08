@@ -35,7 +35,7 @@ async def student_race(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await callback.message.answer(f"Выбрана раса: {esc(race_name)}")
     await callback.message.answer(
-        "<b>Возраст</b>\nНе подскажешь возраст? Мой я давно не считаю, потому что цифры не способны вместить моё величие. "
+        "<b>Возраст</b>\n\nНе подскажешь возраст? Мой я давно не считаю, потому что цифры не способны вместить моё величие. "
         "А вот твой — назови. Сверься с регламентом. Если тебе под сотню, а ты прёшься на первый курс, я даже не разозлюсь — мне просто станет ещё скучнее, чем было.",
         reply_markup=get_back_keyboard(),
         parse_mode="HTML"
@@ -56,7 +56,7 @@ async def student_age(message: types.Message, state: FSMContext):
     # Убрали верхнюю границу
     await state.update_data(age=age)
     await message.answer(
-        "<b>Пол / Рост / Вес</b>\nПол, рост, вес. Три скучных слова. Если у тебя есть что-то интересное в пропорциях — я, может, и подниму бровь. Но вряд ли.",
+        "<b>Пол / Рост / Вес</b>\n\nПол, рост, вес. Три скучных слова. Если у тебя есть что-то интересное в пропорциях — я, может, и подниму бровь. Но вряд ли.",
         reply_markup=get_back_keyboard(),
         parse_mode="HTML"
     )
@@ -67,7 +67,7 @@ async def student_age(message: types.Message, state: FSMContext):
 async def student_gender_height_weight(message: types.Message, state: FSMContext):
     await state.update_data(gender_height_weight=message.text)
     await message.answer(
-        "<b>Характер</b>\nОпиши свой характер. Мне, честно говоря, глубоко безразлично, что ты там о себе думаешь, но правила есть правила. "
+        "<b>Характер</b>\n\nОпиши свой характер. Мне, честно говоря, глубоко безразлично, что ты там о себе думаешь, но правила есть правила. "
         "Минимум 200 символов. «Добрый и отзывчивый» — и я зевну так, что ты испугаешься. Лучше уж пиши, что ты скрытый маньяк. Хоть поржу.",
         reply_markup=get_back_keyboard(),
         parse_mode="HTML"
@@ -86,7 +86,7 @@ async def student_character(message: types.Message, state: FSMContext):
         return
     await state.update_data(character=text)
     await message.answer(
-        "<b>Способности</b>\nНа что ты способен? Не надейся меня впечатлить — я видел магов, которые создавали миры. Я сам создавал миры. "
+        "<b>Способности</b>\n\nНа что ты способен? Не надейся меня впечатлить — я видел магов, которые создавали миры. Я сам создавал миры. "
         "Но давай, расскажи, как ты умеешь зажигать свечку пальцем. Только всесилие, бессмертие и прочее — ЗАПРЕЩЕНО. Это моё. "
         "Я и так слишком щедр, позволяя тебе дышать одним воздухом со мной.",
         reply_markup=get_back_keyboard(),
@@ -99,7 +99,7 @@ async def student_character(message: types.Message, state: FSMContext):
 async def student_abilities(message: types.Message, state: FSMContext):
     await state.update_data(abilities=message.text)
     await message.answer(
-        "<b>Слабости и страхи</b>\nЧего ты боишься? Меня, надеюсь, уже боишься. Если нет — ничего, это приходит со временем. "
+        "<b>Слабости и страхи</b>\n\nЧего ты боишься? Меня, надеюсь, уже боишься. Если нет — ничего, это приходит со временем. "
         "Слабости способностей тоже пиши. Мне это пригодится, чтобы… ну, просто чтобы было. Я коллекционирую чужие уязвимости. Такое вот хобби у бессмертного красавца.",
         reply_markup=get_back_keyboard(),
         parse_mode="HTML"
@@ -111,7 +111,7 @@ async def student_abilities(message: types.Message, state: FSMContext):
 async def student_weaknesses(message: types.Message, state: FSMContext):
     await state.update_data(weaknesses=message.text)
     await message.answer(
-        "<b>Факты</b>\nРазвлеки меня. Любимая еда, хобби, шрамы. Только не вздумай писать «люблю закаты и прогулки» — я тут же потеряю к тебе остатки интереса. "
+        "<b>Факты</b>\n\nРазвлеки меня. Любимая еда, хобби, шрамы. Только не вздумай писать «люблю закаты и прогулки» — я тут же потеряю к тебе остатки интереса. "
         "А их и так немного. Я пока подумаю, не добавить ли ещё один мир. Или леденцов. Я люблю леденцы.",
         reply_markup=get_back_keyboard(),
         parse_mode="HTML"
@@ -123,7 +123,7 @@ async def student_weaknesses(message: types.Message, state: FSMContext):
 async def student_facts(message: types.Message, state: FSMContext):
     await state.update_data(facts=message.text)
     await message.answer(
-        "<b>Внешность</b>\nОпиши, как выглядишь. Если есть картинка — две строки. Я сравню со своим отражением. Спойлер: ты проиграешь. "
+        "<b>Внешность</b>\n\nОпиши, как выглядишь. Если есть картинка — две строки. Я сравню со своим отражением. Спойлер: ты проиграешь. "
         "Мои рога, кстати, светятся в темноте. Бесполезно, но красиво. А ты? Ладно, пиши уже, не заставляй меня ждать. Ждать я не люблю, хотя ты того не стоишь.",
         reply_markup=get_back_keyboard(),
         parse_mode="HTML"
@@ -136,7 +136,7 @@ async def student_appearance(message: types.Message, state: FSMContext):
     # Убираем проверку на количество строк
     await state.update_data(appearance=message.text)
     await message.answer(
-        "<b>Биография</b>\nОт восьми строк. Откуда ты, кто родители, как ты вообще дожил до этого момента. Мне это нужно не для того, чтобы проникнуться твоей драмой — упаси боже, — "
+        "<b>Биография</b>\n\nОткуда ты, кто родители, как ты вообще дожил до этого момента. Мне это нужно не для того, чтобы проникнуться твоей драмой — упаси боже, — "
         "а чтобы понять, сколько ты протянешь в моей Академии. Если биография скучная — приукрась. Я разрешаю. Я сегодня щедрый. Зеркало сказало, что я неотразим, и я ему верю.\n\n"
         "<b>Минимум 200 символов.</b>",
         reply_markup=get_back_keyboard(),
@@ -156,7 +156,7 @@ async def student_biography(message: types.Message, state: FSMContext):
         return
     await state.update_data(biography=text)
     await message.answer(
-        "<b>Курс</b>\nНа какой курс собрался? Сверься с регламентом, я не буду повторять дважды. Если перепутаешь — останешься на первом курсе навсегда. "
+        "<b>Курс</b>\n\nНа какой курс собрался из семи? Сверься с регламентом, я не буду повторять дважды. Если перепутаешь — останешься на первом курсе навсегда. "
         "Мне-то что, я всё равно буду тут, вечный и прекрасный, а вот ты состаришься за партой. Забавно? Возможно.",
         reply_markup=get_back_keyboard(),
         parse_mode="HTML"
@@ -184,12 +184,12 @@ async def student_course(message: types.Message, state: FSMContext):
         f"<b>Раса:</b> {esc(data['race'])}\n"
         f"<b>Возраст:</b> {esc(data['age'])}\n"
         f"<b>Пол/Рост/Вес:</b> {esc(data['gender_height_weight'])}\n"
-        f"<b>Характер:</b>\n{esc(data['character'])}\n"
-        f"<b>Способности:</b>\n{esc(data['abilities'])}\n"
-        f"<b>Слабости и страхи:</b>\n{esc(data['weaknesses'])}\n"
-        f"<b>Факты:</b>\n{esc(data['facts'])}\n"
-        f"<b>Внешность:</b>\n{esc(data['appearance'])}\n"
-        f"<b>Биография:</b>\n{esc(data['biography'])}\n"
+        f"<b>Характер:</b> {esc(data['character'])}\n"
+        f"<b>Способности:</b> {esc(data['abilities'])}\n"
+        f"<b>Слабости и страхи:</b> {esc(data['weaknesses'])}\n"
+        f"<b>Факты:</b> {esc(data['facts'])}\n"
+        f"<b>Внешность:</b> {esc(data['appearance'])}\n"
+        f"<b>Биография:</b> {esc(data['biography'])}\n"
         f"<b>Курс:</b> {esc(data['course'])}\n"
     )
 
