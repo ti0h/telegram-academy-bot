@@ -1,4 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from .positions import load_positions
 
 RACE_MAP = {
     "dark_elf": "Тёмный эльф",
@@ -30,14 +31,11 @@ def get_race_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def get_race_keyboard_with_back():
-    """Клавиатура с выбором расы + кнопка 'Назад'."""
     kb = get_race_keyboard()
-    # добавляем строку с кнопкой назад
     kb.inline_keyboard.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="back")])
     return kb
 
 def get_back_keyboard():
-    """Клавиатура только с кнопкой 'Назад'."""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="back")]
     ])
@@ -55,3 +53,23 @@ def get_approve_reject_keyboard(user_id: int):
             InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{user_id}")
         ]
     ])
+
+def get_positions_keyboard():
+    """Клавиатура со списком должностей и их статусами."""
+    data = load_positions()
+    buttons = []
+    for pos, info in data.items():
+        status = info["status"]
+        label = pos
+        if status == "reserved":
+            label += " (забронирована)"
+        elif status == "occupied":
+            label += " (занята)"
+        # Если свободна – кнопка активна, иначе disabled (но мы просто не даём выбрать)
+        if status == "free":
+            callback_data = f"pos_{pos}"
+        else:
+            callback_data = f"pos_{pos}_disabled"
+        buttons.append([InlineKeyboardButton(text=label, callback_data=callback_data)])
+    buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="back")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
