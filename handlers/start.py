@@ -2,8 +2,8 @@ from aiogram import Router, types, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 
-from ..states import Choice, StudentForm, StaffForm
-from ..keyboards import get_main_menu_keyboard
+from states import Choice, StudentForm, StaffForm, STUDENT_PREV, STAFF_PREV, STUDENT_QUESTIONS, STAFF_QUESTIONS
+from keyboards import get_main_menu_keyboard, get_race_keyboard_with_back, get_back_keyboard
 
 router = Router()
 
@@ -42,3 +42,59 @@ async def process_choice(callback: types.CallbackQuery, state: FSMContext):
         )
         await state.set_state(StaffForm.position)
     await callback.answer()
+
+# Обработчик кнопки "Назад"
+@router.callback_query(F.data == "back")
+async def go_back(callback: types.CallbackQuery, state: FSMContext):
+    current_state = await state.get_state()
+    if not current_state:
+        await callback.answer("Нечего отменять")
+        return
+
+    # Проверяем, является ли состояние частью ученической или персонажной анкеты
+    if current_state in STUDENT_PREV:
+        prev = STUDENT_PREV[current_state]
+        # Получаем текст вопроса для предыдущего состояния
+        question = STUDENT_QUESTIONS.get(prev, "Вернулись к предыдущему шагу.")
+        await state.set_state(prev)
+        await callback.message.delete()
+        # Отправляем вопрос с соответствующей клавиатурой
+        await send_question(callback.message.chat.id, prev, question, is_student=True)
+        await callback.answer()
+    elif current_state in STAFF_PREV:
+        prev = STAFF_PREV[current_state]
+        question = STAFF_QUESTIONS.get(prev, "Вернулись к предыдущему шагу.")
+        await state.set_state(prev)
+        await callback.message.delete()
+        await send_question(callback.message.chat.id, prev, question, is_student=False)
+        await callback.answer()
+    else:
+        await callback.answer("Нельзя вернуться назад", show_alert=True)
+
+async def send_question(chat_id: int, state: State, text: str, is_student: bool):
+    """Вспомогательная функция для отправки вопроса с правильной клавиатурой."""
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from keyboards import get_race_keyboard_with_back, get_back_keyboard
+
+    # Определяем, какая клавиатура нужна для данного состояния
+    if is_student:
+        if state == StudentForm.race:
+            keyboard = get_race_keyboard_with_back()
+        elif state == StudentForm.name:
+            # Для имени (первый шаг) нет кнопки "Назад"
+            keyboard = None
+        else:
+            keyboard = get_back_keyboard()
+    else:
+        if state == StaffForm.race:
+            keyboard = get_race_keyboard_with_back()
+        elif state == StaffForm.position:
+            # Первый шаг персонала
+            keyboard = None
+        else:
+            keyboard = get_back_keyboard()
+
+    await bot.send_message(chat_id, text, reply_markup=keyboard, parse_mode="HTML")
+
+# Импортируем bot для использования в send_question (глобально)
+from main import bot
