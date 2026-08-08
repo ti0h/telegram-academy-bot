@@ -3,10 +3,10 @@ from aiogram import Router, types, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from ..config import GROUP_CHAT_ID
-from ..states import StudentForm
-from ..keyboards import get_race_keyboard, RACE_MAP, get_approve_reject_keyboard
-from ..utils import esc
+from config import GROUP_CHAT_ID
+from states import StudentForm
+from keyboards import get_race_keyboard_with_back, RACE_MAP, get_approve_reject_keyboard, get_back_keyboard
+from utils import esc
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ async def student_name(message: types.Message, state: FSMContext):
     await message.answer(
         "<b>Раса</b>\nИ кто ты у нас по природе? Человек, эльф, недодемон? Пока ты будешь перечислять, я, пожалуй, пересчитаю свои рога. "
         "О, у меня их два. Прекрасных. Тёмно-синих. А у тебя? Ну давай, не томи, кто ты там по расовой принадлежности.",
-        reply_markup=get_race_keyboard(),
+        reply_markup=get_race_keyboard_with_back(),
         parse_mode="HTML"
     )
     await state.set_state(StudentForm.race)
@@ -37,6 +37,7 @@ async def student_race(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer(
         "<b>Возраст</b>\nНе подскажешь возраст? Мой я давно не считаю, потому что цифры не способны вместить моё величие. "
         "А вот твой — назови. Сверься с регламентом. Если тебе под сотню, а ты прёшься на первый курс, я даже не разозлюсь — мне просто станет ещё скучнее, чем было.",
+        reply_markup=get_back_keyboard(),
         parse_mode="HTML"
     )
     await state.set_state(StudentForm.age)
@@ -46,15 +47,17 @@ async def student_race(callback: types.CallbackQuery, state: FSMContext):
 @router.message(StateFilter(StudentForm.age))
 async def student_age(message: types.Message, state: FSMContext):
     if not message.text or not message.text.isdigit():
-        await message.answer("⚠️ Возраст должен быть числом. Попробуйте снова.")
+        await message.answer("⚠️ Возраст должен быть числом. Попробуйте снова.", reply_markup=get_back_keyboard())
         return
     age = int(message.text)
-    if age < 1 or age > 120:
-        await message.answer("⚠️ Возраст должен быть от 1 до 120. Введите корректно.")
+    if age < 1:
+        await message.answer("⚠️ Возраст должен быть положительным числом. Введите корректно.", reply_markup=get_back_keyboard())
         return
+    # Убрали верхнюю границу
     await state.update_data(age=age)
     await message.answer(
         "<b>Пол / Рост / Вес</b>\nПол, рост, вес. Три скучных слова. Если у тебя есть что-то интересное в пропорциях — я, может, и подниму бровь. Но вряд ли.",
+        reply_markup=get_back_keyboard(),
         parse_mode="HTML"
     )
     await state.set_state(StudentForm.gender_height_weight)
@@ -65,7 +68,8 @@ async def student_gender_height_weight(message: types.Message, state: FSMContext
     await state.update_data(gender_height_weight=message.text)
     await message.answer(
         "<b>Характер</b>\nОпиши свой характер. Мне, честно говоря, глубоко безразлично, что ты там о себе думаешь, но правила есть правила. "
-        "Четыре строки. «Добрый и отзывчивый» — и я зевну так, что ты испугаешься. Лучше уж пиши, что ты скрытый маньяк. Хоть поржу.",
+        "Минимум 200 символов. «Добрый и отзывчивый» — и я зевну так, что ты испугаешься. Лучше уж пиши, что ты скрытый маньяк. Хоть поржу.",
+        reply_markup=get_back_keyboard(),
         parse_mode="HTML"
     )
     await state.set_state(StudentForm.character)
@@ -73,15 +77,19 @@ async def student_gender_height_weight(message: types.Message, state: FSMContext
 
 @router.message(StateFilter(StudentForm.character))
 async def student_character(message: types.Message, state: FSMContext):
-    lines = message.text.splitlines() if message.text else []
-    if len(lines) < 4:
-        await message.answer(f"⚠️ Характер должен содержать минимум 4 строки. Сейчас {len(lines)}. Напишите подробнее:")
+    text = message.text or ""
+    if len(text) < 200:
+        await message.answer(
+            f"⚠️ Характер должен содержать минимум 200 символов. Сейчас {len(text)}. Напишите подробнее.",
+            reply_markup=get_back_keyboard()
+        )
         return
-    await state.update_data(character=message.text)
+    await state.update_data(character=text)
     await message.answer(
         "<b>Способности</b>\nНа что ты способен? Не надейся меня впечатлить — я видел магов, которые создавали миры. Я сам создавал миры. "
         "Но давай, расскажи, как ты умеешь зажигать свечку пальцем. Только всесилие, бессмертие и прочее — ЗАПРЕЩЕНО. Это моё. "
         "Я и так слишком щедр, позволяя тебе дышать одним воздухом со мной.",
+        reply_markup=get_back_keyboard(),
         parse_mode="HTML"
     )
     await state.set_state(StudentForm.abilities)
@@ -93,6 +101,7 @@ async def student_abilities(message: types.Message, state: FSMContext):
     await message.answer(
         "<b>Слабости и страхи</b>\nЧего ты боишься? Меня, надеюсь, уже боишься. Если нет — ничего, это приходит со временем. "
         "Слабости способностей тоже пиши. Мне это пригодится, чтобы… ну, просто чтобы было. Я коллекционирую чужие уязвимости. Такое вот хобби у бессмертного красавца.",
+        reply_markup=get_back_keyboard(),
         parse_mode="HTML"
     )
     await state.set_state(StudentForm.weaknesses)
@@ -104,6 +113,7 @@ async def student_weaknesses(message: types.Message, state: FSMContext):
     await message.answer(
         "<b>Факты</b>\nРазвлеки меня. Любимая еда, хобби, шрамы. Только не вздумай писать «люблю закаты и прогулки» — я тут же потеряю к тебе остатки интереса. "
         "А их и так немного. Я пока подумаю, не добавить ли ещё один мир. Или леденцов. Я люблю леденцы.",
+        reply_markup=get_back_keyboard(),
         parse_mode="HTML"
     )
     await state.set_state(StudentForm.facts)
@@ -115,6 +125,7 @@ async def student_facts(message: types.Message, state: FSMContext):
     await message.answer(
         "<b>Внешность</b>\nОпиши, как выглядишь. Если есть картинка — две строки. Я сравню со своим отражением. Спойлер: ты проиграешь. "
         "Мои рога, кстати, светятся в темноте. Бесполезно, но красиво. А ты? Ладно, пиши уже, не заставляй меня ждать. Ждать я не люблю, хотя ты того не стоишь.",
+        reply_markup=get_back_keyboard(),
         parse_mode="HTML"
     )
     await state.set_state(StudentForm.appearance)
@@ -122,14 +133,13 @@ async def student_facts(message: types.Message, state: FSMContext):
 
 @router.message(StateFilter(StudentForm.appearance))
 async def student_appearance(message: types.Message, state: FSMContext):
-    lines = message.text.splitlines() if message.text else []
-    if len(lines) < 2:
-        await message.answer("⚠️ Внешность должна содержать минимум 2 строки. Опишите подробнее.")
-        return
+    # Убираем проверку на количество строк
     await state.update_data(appearance=message.text)
     await message.answer(
         "<b>Биография</b>\nОт восьми строк. Откуда ты, кто родители, как ты вообще дожил до этого момента. Мне это нужно не для того, чтобы проникнуться твоей драмой — упаси боже, — "
-        "а чтобы понять, сколько ты протянешь в моей Академии. Если биография скучная — приукрась. Я разрешаю. Я сегодня щедрый. Зеркало сказало, что я неотразим, и я ему верю.",
+        "а чтобы понять, сколько ты протянешь в моей Академии. Если биография скучная — приукрась. Я разрешаю. Я сегодня щедрый. Зеркало сказало, что я неотразим, и я ему верю.\n\n"
+        "<b>Минимум 200 символов.</b>",
+        reply_markup=get_back_keyboard(),
         parse_mode="HTML"
     )
     await state.set_state(StudentForm.biography)
@@ -137,14 +147,18 @@ async def student_appearance(message: types.Message, state: FSMContext):
 
 @router.message(StateFilter(StudentForm.biography))
 async def student_biography(message: types.Message, state: FSMContext):
-    lines = message.text.splitlines() if message.text else []
-    if len(lines) < 8:
-        await message.answer(f"⚠️ Биография должна содержать минимум 8 строк. Сейчас {len(lines)}. Напишите подробнее:")
+    text = message.text or ""
+    if len(text) < 200:
+        await message.answer(
+            f"⚠️ Биография должна содержать минимум 200 символов. Сейчас {len(text)}. Напишите подробнее.",
+            reply_markup=get_back_keyboard()
+        )
         return
-    await state.update_data(biography=message.text)
+    await state.update_data(biography=text)
     await message.answer(
         "<b>Курс</b>\nНа какой курс собрался? Сверься с регламентом, я не буду повторять дважды. Если перепутаешь — останешься на первом курсе навсегда. "
         "Мне-то что, я всё равно буду тут, вечный и прекрасный, а вот ты состаришься за партой. Забавно? Возможно.",
+        reply_markup=get_back_keyboard(),
         parse_mode="HTML"
     )
     await state.set_state(StudentForm.course)
