@@ -23,15 +23,16 @@ async def cmd_start(message: types.Message, state: FSMContext):
 async def process_choice(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
     if callback.data == "choice_student":
-        await callback.message.answer(
+        sent = await callback.message.answer(
             "<b>Для ученика</b>\n\n"
             "Назовись. Только без титулов, умоляю. «Лорд Тьмы», «Повелительница Звёзд» — я этого не вынесу. "
             "У меня у самого их десяток, и я не разбрасываюсь. Просто имя. Мне, в общем-то, всё равно, но формальности требуют.",
             parse_mode="HTML"
         )
+        await state.update_data(last_bot_message_id=sent.message_id)
         await state.set_state(StudentForm.name)
     elif callback.data == "choice_staff":
-        await callback.message.answer(
+        sent = await callback.message.answer(
             "<b>Для персонала</b>\n\n"
             "Решил устроиться ко мне на работу? Смело. Или глупо. Я пока не определился. Знаешь, что я люблю больше, чем хаос? Только себя. "
             "Так что, если ты не готов мириться с моим величием, капризами и тем, что я временами вообще забываю о существовании персонала, — лучше уйди сейчас. Я даже не замечу.\n\n"
@@ -40,12 +41,11 @@ async def process_choice(callback: types.CallbackQuery, state: FSMContext):
             "А когда я разочаровываюсь, я начинаю искать развлечений. Обычно за чужой счёт. Ну так что, не передумал? Нет? Ну смотри.",
             parse_mode="HTML"
         )
+        await state.update_data(last_bot_message_id=sent.message_id)
         await state.set_state(StaffForm.position)
     await callback.answer()
 
-# =====================================================
-# ОБРАБОТЧИК КНОПКИ "НАЗАД" (без отдельной функции)
-# =====================================================
+# ---------- Обработчик кнопки "Назад" ----------
 @router.callback_query(F.data == "back")
 async def go_back(callback: types.CallbackQuery, state: FSMContext):
     current_state = await state.get_state()
@@ -53,49 +53,66 @@ async def go_back(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("Нечего отменять")
         return
 
-    # Проверяем, является ли состояние частью ученической анкеты
+    # Удаляем текущее сообщение (кнопку)
+    await callback.message.delete()
+
+    # Проверяем ученик или персонал
     if current_state in STUDENT_PREV:
         prev = STUDENT_PREV[current_state]
         question = STUDENT_QUESTIONS.get(prev, "Вернулись к предыдущему шагу.")
         await state.set_state(prev)
-        await callback.message.delete()
-
-        # Определяем клавиатуру для предыдущего состояния
+        # Определяем клавиатуру для предыдущего шага
         if prev == StudentForm.race:
             keyboard = get_race_keyboard_with_back()
         elif prev == StudentForm.name:
-            keyboard = None  # на первом шаге кнопка "Назад" не нужна
+            keyboard = None  # на первом шаге кнопки "Назад" нет
         else:
             keyboard = get_back_keyboard()
 
-        await callback.bot.send_message(
+        # Удаляем предыдущее сообщение бота (если есть)
+        data = await state.get_data()
+        last_id = data.get('last_bot_message_id')
+        if last_id:
+            try:
+                await callback.bot.delete_message(callback.message.chat.id, last_id)
+            except Exception:
+                pass
+
+        sent = await callback.bot.send_message(
             callback.message.chat.id,
             question,
             reply_markup=keyboard,
             parse_mode="HTML"
         )
+        await state.update_data(last_bot_message_id=sent.message_id)
         await callback.answer()
 
-    # Проверяем, является ли состояние частью анкеты персонала
     elif current_state in STAFF_PREV:
         prev = STAFF_PREV[current_state]
         question = STAFF_QUESTIONS.get(prev, "Вернулись к предыдущему шагу.")
         await state.set_state(prev)
-        await callback.message.delete()
-
         if prev == StaffForm.race:
             keyboard = get_race_keyboard_with_back()
         elif prev == StaffForm.position:
-            keyboard = None  # первый шаг персонала
+            keyboard = None
         else:
             keyboard = get_back_keyboard()
 
-        await callback.bot.send_message(
+        data = await state.get_data()
+        last_id = data.get('last_bot_message_id')
+        if last_id:
+            try:
+                await callback.bot.delete_message(callback.message.chat.id, last_id)
+            except Exception:
+                pass
+
+        sent = await callback.bot.send_message(
             callback.message.chat.id,
             question,
             reply_markup=keyboard,
             parse_mode="HTML"
         )
+        await state.update_data(last_bot_message_id=sent.message_id)
         await callback.answer()
 
     else:
