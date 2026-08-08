@@ -8,25 +8,28 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.client.default import DefaultBotProperties
 
 from config import BOT_TOKEN, GROUP_CHAT_ID, PORT
-from handlers import start, student, staff, admin
 
-# Настройка логирования
+# Импортируем роутеры из папки handlers
+from handlers.start import router as start_router
+from handlers.student import router as student_router
+from handlers.staff import router as staff_router
+from handlers.admin import router as admin_router
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-# Инициализация бота и диспетчера
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
-# Подключение роутеров
-dp.include_router(start.router)
-dp.include_router(student.router)
-dp.include_router(staff.router)
-dp.include_router(admin.router)
+# Подключаем роутеры
+dp.include_router(start_router)
+dp.include_router(student_router)
+dp.include_router(staff_router)
+dp.include_router(admin_router)
 
 # Веб-сервер для health check
 async def start_web_server():
