@@ -28,7 +28,8 @@ if not GROUP_CHAT_ID_RAW:
 GROUP_CHAT_ID = int(GROUP_CHAT_ID_RAW)
 PORT = int(os.getenv("PORT", 10000))
 
-logging.basicConfig(level=logging.INFO)
+# Уровень логирования – DEBUG для детальной отладки
+logging.basicConfig(level=logging.DEBUG)
 storage = MemoryStorage()
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 dp = Dispatcher(storage=storage)
@@ -304,6 +305,14 @@ async def student_course(message: types.Message, state: FSMContext):
     data = await state.get_data()
     await state.clear()
 
+    # Проверяем наличие всех необходимых ключей
+    required_keys = ['name', 'race', 'age', 'gender_height_weight', 'character', 
+                     'abilities', 'weaknesses', 'facts', 'appearance', 'biography', 'course']
+    for key in required_keys:
+        if key not in data:
+            await message.answer(f"⚠️ Ошибка: не хватает данных '{key}'. Попробуйте заполнить анкету заново.")
+            return
+
     text = (
         "📄 <b>Новая анкета ученика</b>\n\n"
         f"<b>Имя и фамилия:</b> {esc(data['name'])}\n"
@@ -324,12 +333,27 @@ async def student_course(message: types.Message, state: FSMContext):
          InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{message.from_user.id}")]
     ])
 
-    await bot.send_message(GROUP_CHAT_ID, text, reply_markup=keyboard, parse_mode="HTML")
-    await message.answer(
-        "✅ Анкета отправлена на проверку.\n\n"
-        "<b>На правки — три дня.</b> Не успеешь — твои проблемы. Мне не к спеху. Я могу ждать вечность. Но тебе-то, смертный, вечность не светит.",
-        parse_mode="HTML"
-    )
+    # Отправка в группу с обработкой ошибок
+    try:
+        await bot.send_message(GROUP_CHAT_ID, text, reply_markup=keyboard, parse_mode="HTML")
+        logging.info(f"Анкета ученика от {message.from_user.id} отправлена в группу {GROUP_CHAT_ID}")
+    except Exception as e:
+        logging.error(f"Ошибка отправки анкеты ученика в группу {GROUP_CHAT_ID}: {e}")
+        await message.answer(
+            "⚠️ Произошла ошибка при отправке анкеты администраторам. Пожалуйста, попробуйте позже или свяжитесь с администратором.",
+            parse_mode="HTML"
+        )
+        return
+
+    # Финальное сообщение пользователю
+    try:
+        await message.answer(
+            "✅ Анкета отправлена на проверку.\n\n"
+            "<b>На правки — три дня.</b> Не успеешь — твои проблемы. Мне не к спеху. Я могу ждать вечность. Но тебе-то, смертный, вечность не светит.",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        logging.error(f"Ошибка отправки финального сообщения пользователю {message.from_user.id}: {e}")
 
 
 # ---------- АНКЕТА ПЕРСОНАЛА ----------
@@ -479,6 +503,14 @@ async def staff_biography(message: types.Message, state: FSMContext):
     data = await state.get_data()
     await state.clear()
 
+    # Проверка наличия всех ключей
+    required_keys = ['position', 'name', 'age', 'race', 'gender_height_weight',
+                     'character', 'abilities', 'weaknesses', 'facts', 'appearance', 'biography']
+    for key in required_keys:
+        if key not in data:
+            await message.answer(f"⚠️ Ошибка: не хватает данных '{key}'. Попробуйте заполнить анкету заново.")
+            return
+
     text = (
         "📄 <b>Новая анкета персонала</b>\n\n"
         f"<b>Должность:</b> {esc(data['position'])}\n"
@@ -499,20 +531,31 @@ async def staff_biography(message: types.Message, state: FSMContext):
          InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{message.from_user.id}")]
     ])
 
-    await bot.send_message(GROUP_CHAT_ID, text, reply_markup=keyboard, parse_mode="HTML")
-    await message.answer(
-        "✅ Анкета отправлена на проверку.\n\n"
-        "<b>Бронь — неделя. Анкету править — три дня.</b> Если не успеешь… да плевать, если честно. Найдёшь другую работу. Или не найдёшь. "
-        "Я в любом случае останусь тут — великий, прекрасный и абсолютно довольный собой.",
-        parse_mode="HTML"
-    )
+    try:
+        await bot.send_message(GROUP_CHAT_ID, text, reply_markup=keyboard, parse_mode="HTML")
+        logging.info(f"Анкета персонала от {message.from_user.id} отправлена в группу {GROUP_CHAT_ID}")
+    except Exception as e:
+        logging.error(f"Ошибка отправки анкеты персонала в группу {GROUP_CHAT_ID}: {e}")
+        await message.answer(
+            "⚠️ Произошла ошибка при отправке анкеты администраторам. Пожалуйста, попробуйте позже или свяжитесь с администратором.",
+            parse_mode="HTML"
+        )
+        return
+
+    try:
+        await message.answer(
+            "✅ Анкета отправлена на проверку.\n\n"
+            "<b>Бронь — неделя. Анкету править — три дня.</b> Если не успеешь… да плевать, если честно. Найдёшь другую работу. Или не найдёшь. "
+            "Я в любом случае останусь тут — великий, прекрасный и абсолютно довольный собой.",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        logging.error(f"Ошибка отправки финального сообщения пользователю {message.from_user.id}: {e}")
 
 
 # ---------- ОБРАБОТЧИК КНОПОК (ОДОБРИТЬ / ОТКЛОНИТЬ) ----------
 @dp.callback_query()
 async def handle_group_action(callback: types.CallbackQuery, state: FSMContext):
-    # Обрабатываем только ожидаемый формат "approve_123" / "reject_123",
-    # чтобы случайный callback_data не уронил обработчик.
     parts = callback.data.split("_", 1)
     if len(parts) != 2 or parts[0] not in ("approve", "reject") or not parts[1].isdigit():
         await callback.answer()
@@ -539,12 +582,18 @@ async def handle_group_action(callback: types.CallbackQuery, state: FSMContext):
 
     if action == "approve":
         new_text = callback.message.text + f"\n\n✅ <b>Одобрено</b> администратором {admin_mention}"
-        await bot.edit_message_text(
-            new_text,
-            chat_id=GROUP_CHAT_ID,
-            message_id=callback.message.message_id,
-            parse_mode="HTML"
-        )
+        try:
+            await bot.edit_message_text(
+                new_text,
+                chat_id=GROUP_CHAT_ID,
+                message_id=callback.message.message_id,
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            logging.error(f"Ошибка редактирования сообщения при одобрении: {e}")
+            await callback.answer("⚠️ Ошибка редактирования", show_alert=True)
+            return
+
         try:
             await bot.send_message(
                 user_id,
@@ -553,6 +602,7 @@ async def handle_group_action(callback: types.CallbackQuery, state: FSMContext):
             )
         except Exception as e:
             logging.warning("Не удалось уведомить пользователя %s: %s", user_id, e)
+
         await callback.answer("Анкета принята", show_alert=False)
 
     elif action == "reject":
@@ -563,14 +613,18 @@ async def handle_group_action(callback: types.CallbackQuery, state: FSMContext):
             admin_mention=admin_mention,
             admin_id=admin.id
         )
-        request_msg = await bot.send_message(
-            GROUP_CHAT_ID,
-            f"👤 {admin_mention}, напишите <b>причину отклонения</b> в ответ на это сообщение.",
-            parse_mode="HTML"
-        )
-        await state.update_data(request_message_id=request_msg.message_id)
-        await state.set_state(RejectReason.waiting_for_reason)
-        await callback.answer("Напишите причину в группе, ответив на запрос.", show_alert=False)
+        try:
+            request_msg = await bot.send_message(
+                GROUP_CHAT_ID,
+                f"👤 {admin_mention}, напишите <b>причину отклонения</b> в ответ на это сообщение.",
+                parse_mode="HTML"
+            )
+            await state.update_data(request_message_id=request_msg.message_id)
+            await state.set_state(RejectReason.waiting_for_reason)
+            await callback.answer("Напишите причину в группе, ответив на запрос.", show_alert=False)
+        except Exception as e:
+            logging.error(f"Ошибка при запросе причины отклонения: {e}")
+            await callback.answer("⚠️ Ошибка при запросе причины", show_alert=True)
 
 
 # ---------- ОБРАБОТЧИК ПРИЧИНЫ ОТКЛОНЕНИЯ ----------
@@ -613,6 +667,7 @@ async def process_reject_reason(message: types.Message, state: FSMContext):
             parse_mode="HTML"
         )
     except Exception as e:
+        logging.error(f"Ошибка редактирования при отклонении: {e}")
         await message.answer(f"⚠️ Ошибка редактирования: {esc(e)}")
         return
 
@@ -646,7 +701,6 @@ async def start_web_server():
 
 
 async def main():
-    # Глобальный parse_mode уже задан через DefaultBotProperties, но явное указание надёжнее
     await start_web_server()
     await dp.start_polling(bot)
 
